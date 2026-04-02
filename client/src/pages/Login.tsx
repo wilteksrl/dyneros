@@ -74,10 +74,10 @@ export default function Login() {
               className="text-2xl font-bold text-foreground mb-2"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              Access Your Account
+              Accedi al Tuo Account
             </h1>
             <p className="text-sm text-muted-foreground">
-              Sign in to manage your Dyneros infrastructure and services.
+              Accedi per gestire la tua infrastruttura e i tuoi servizi Dyneros.
             </p>
           </div>
 
@@ -86,19 +86,19 @@ export default function Login() {
               className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold h-12 text-base group"
               style={{ boxShadow: "0 0 20px oklch(68% 0.19 72 / 0.2)" }}
             >
-              Continue with Manus
+              Continua con Manus
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </a>
 
           <p className="text-center text-xs text-muted-foreground mt-6">
-            By continuing, you agree to Dyneros' Terms of Service and Privacy Policy.
+            Continuando, accetti i Termini di Servizio e la Privacy Policy di Dyneros.
           </p>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           <a href="/" className="hover:text-foreground transition-colors">
-            ← Back to dyneros.com
+            ← Torna a dyneros.com
           </a>
         </p>
       </div>

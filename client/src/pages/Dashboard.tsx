@@ -24,38 +24,38 @@ const networkServices = [
   {
     icon: Search,
     name: "Explorer",
-    description: "Browse transactions and blocks",
+    description: "Sfoglia transazioni e blocchi",
     href: "https://explorer.dyneros.com",
     status: "live",
   },
   {
     icon: Wallet,
     name: "Wallet",
-    description: "Manage assets and accounts",
+    description: "Gestisci asset e account",
     href: "https://wallet.dyneros.com",
     status: "live",
   },
   {
     icon: Network,
     name: "Mainnet",
-    description: "Primary network endpoint",
+    description: "Endpoint della rete principale",
     href: "https://mainnet.dyneros.com",
     status: "live",
   },
   {
     icon: BarChart3,
     name: "Analytics",
-    description: "Network performance metrics",
+    description: "Metriche di performance della rete",
     href: "#",
     status: "soon",
   },
 ];
 
 const networkStats = [
-  { label: "Network Status", value: "Operational", color: "oklch(60% 0.18 145)" },
-  { label: "Latest Block", value: "1,847,412", color: "oklch(68% 0.19 72)" },
+  { label: "Stato Rete", value: "Operativa", color: "oklch(60% 0.18 145)" },
+  { label: "Ultimo Blocco", value: "1,847,412", color: "oklch(68% 0.19 72)" },
   { label: "TPS", value: "1,247", color: "oklch(68% 0.19 72)" },
-  { label: "Validators", value: "12 Active", color: "oklch(68% 0.19 72)" },
+  { label: "Validatori", value: "12 Attivi", color: "oklch(68% 0.19 72)" },
 ];
 
 export default function Dashboard() {
@@ -79,7 +79,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 rounded-full border-2 border-[oklch(68%_0.19_72)] border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+          <p className="text-sm text-muted-foreground">Caricamento dashboard...</p>
         </div>
       </div>
     );
@@ -120,7 +120,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[oklch(14%_0.007_264)] border border-[oklch(22%_0.008_264)]">
                 <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)] animate-pulse" />
-                <span className="text-xs text-muted-foreground">Network Operational</span>
+                <span className="text-xs text-muted-foreground">Rete Operativa</span>
               </div>
               <Button
                 variant="ghost"
@@ -129,7 +129,7 @@ export default function Dashboard() {
                 onClick={() => logoutMutation.mutate()}
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign Out</span>
+                <span className="hidden sm:inline">Esci</span>
               </Button>
             </div>
           </div>
@@ -143,10 +143,10 @@ export default function Dashboard() {
             className="text-2xl md:text-3xl font-bold text-foreground mb-1"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Welcome back{user?.name ? `, ${user.name}` : ""}
+            Bentornato{user?.name ? `, ${user.name}` : ""}
           </h1>
           <p className="text-muted-foreground text-sm">
-            Manage your Dyneros infrastructure and services from here.
+            Gestisci la tua infrastruttura e i tuoi servizi Dyneros da qui.
           </p>
         </div>
 
@@ -158,7 +158,7 @@ export default function Dashboard() {
               className="font-semibold text-foreground"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              Network Status
+              Stato della Rete
             </h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -194,7 +194,7 @@ export default function Dashboard() {
                   className="font-semibold text-foreground"
                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
-                  Service Access
+                  Accesso ai Servizi
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -208,7 +208,7 @@ export default function Dashboard() {
                       service.href === "#"
                         ? (e) => {
                             e.preventDefault();
-                            toast.info("Feature coming soon");
+                            toast.info("Funzionalità in arrivo");
                           }
                         : undefined
                     }
@@ -222,7 +222,7 @@ export default function Dashboard() {
                         <span className="font-medium text-foreground text-sm">{service.name}</span>
                         {service.status === "soon" ? (
                           <span className="text-[10px] font-medium text-muted-foreground bg-[oklch(18%_0.008_264)] px-1.5 py-0.5 rounded-full">
-                            Soon
+                            Presto
                           </span>
                         ) : (
                           <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -260,7 +260,7 @@ export default function Dashboard() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-medium text-foreground text-sm truncate">
-                    {user?.name ?? "User"}
+                    {user?.name ?? "Utente"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {user?.email ?? "—"}
@@ -269,14 +269,14 @@ export default function Dashboard() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-2 border-t border-[oklch(22%_0.008_264)]">
-                  <span className="text-xs text-muted-foreground">Plan</span>
+                  <span className="text-xs text-muted-foreground">Piano</span>
                   <span className="text-xs font-medium text-[oklch(68%_0.19_72)]">Starter</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-t border-[oklch(22%_0.008_264)]">
-                  <span className="text-xs text-muted-foreground">Status</span>
+                  <span className="text-xs text-muted-foreground">Stato</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)]" />
-                    <span className="text-xs font-medium text-foreground">Active</span>
+                    <span className="text-xs font-medium text-foreground">Attivo</span>
                   </div>
                 </div>
               </div>
@@ -287,20 +287,20 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 mb-3">
                 <Shield className="w-4 h-4 text-[oklch(68%_0.19_72)]" />
                 <h3 className="font-semibold text-foreground text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Security
+                  Sicurezza
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground mb-3">
-                Your session is secured with end-to-end encryption.
+                La tua sessione è protetta con crittografia end-to-end.
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full border-[oklch(22%_0.008_264)] text-xs hover:border-[oklch(68%_0.19_72/0.4)]"
-                onClick={() => toast.info("Settings coming soon")}
+                onClick={() => toast.info("Impostazioni in arrivo")}
               >
                 <Settings className="w-3.5 h-3.5 mr-2" />
-                Manage Settings
+                Gestisci Impostazioni
               </Button>
             </div>
           </div>

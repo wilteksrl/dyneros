@@ -5,46 +5,46 @@ import { getLoginUrl } from "@/const";
 const plans = [
   {
     name: "Starter",
-    target: "Small teams",
-    price: "Contact",
-    priceNote: "for pricing",
-    description: "Everything you need to get started on Dyneros Chain.",
+    target: "Piccoli team",
+    price: "Contattaci",
+    priceNote: "per i prezzi",
+    description: "Tutto il necessario per iniziare su Dyneros Chain.",
     features: [
-      "Shared network access",
-      "Up to 10,000 tx/month",
-      "Explorer & Wallet access",
+      "Accesso rete condivisa",
+      "Fino a 10.000 tx/mese",
+      "Accesso Explorer e Wallet",
     ],
-    cta: "Get Started",
+    cta: "Inizia Ora",
     ctaVariant: "outline" as const,
     highlighted: false,
   },
   {
     name: "Business",
-    target: "Growing companies",
-    price: "Contact",
-    priceNote: "for pricing",
-    description: "Dedicated resources and priority support for scaling teams.",
+    target: "Aziende in crescita",
+    price: "Contattaci",
+    priceNote: "per i prezzi",
+    description: "Risorse dedicate e supporto prioritario per team in espansione.",
     features: [
-      "Dedicated node instance",
-      "Up to 500,000 tx/month",
-      "Smart contract deployment",
+      "Istanza nodo dedicata",
+      "Fino a 500.000 tx/mese",
+      "Deploy di smart contract",
     ],
-    cta: "Contact Sales",
+    cta: "Contatta le Vendite",
     ctaVariant: "default" as const,
     highlighted: true,
   },
   {
     name: "Enterprise",
-    target: "Corporations",
-    price: "Custom",
-    priceNote: "pricing",
-    description: "Full infrastructure ownership, compliance tooling, and SLA guarantees.",
+    target: "Grandi Aziende",
+    price: "Su misura",
+    priceNote: "prezzi personalizzati",
+    description: "Piena proprietà dell'infrastruttura, strumenti di conformità e garanzie SLA.",
     features: [
-      "Private chain deployment",
-      "Unlimited transactions",
-      "Dedicated SLA & compliance",
+      "Deploy chain privata",
+      "Transazioni illimitate",
+      "SLA dedicato e conformità",
     ],
-    cta: "Request Demo",
+    cta: "Richiedi Demo",
     ctaVariant: "outline" as const,
     highlighted: false,
   },
@@ -58,17 +58,17 @@ export default function PricingSection() {
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
             <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-              Pricing
+              Prezzi
             </span>
           </div>
           <h2
             className="text-4xl md:text-5xl font-bold text-foreground mb-4"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Simple, Transparent Plans
+            Piani Semplici e Trasparenti
           </h2>
           <p className="text-muted-foreground text-lg">
-            No hidden fees. No lock-in. Scale when you're ready.
+            Nessun costo nascosto. Nessun lock-in. Scala quando sei pronto.
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export default function PricingSection() {
               {plan.highlighted && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                   <span className="text-xs font-bold text-[oklch(10%_0.005_264)] bg-[oklch(68%_0.19_72)] px-4 py-1 rounded-full">
-                    Most Popular
+                    Più Popolare
                   </span>
                 </div>
               )}
@@ -177,8 +177,8 @@ export default function PricingSection() {
 
         {/* Enterprise note */}
         <p className="text-center text-sm text-muted-foreground mt-10">
-          All plans include network monitoring, technical documentation, and onboarding support.
-          Enterprise clients receive a dedicated account manager.
+          Tutti i piani includono monitoraggio della rete, documentazione tecnica e supporto all'onboarding.
+          I clienti Enterprise ricevono un account manager dedicato.
         </p>
       </div>
     </section>

@@ -35,3 +35,14 @@
 ## SEO & Performance
 - [x] Meta tags, Open Graph, structured data
 - [x] Lighthouse-ready: lazy loading, font optimization
+
+## Aggiornamenti Richiesti
+- [ ] Traduzione completa in italiano: Navbar, Hero, TrustBar, ChainSection
+- [ ] Traduzione completa in italiano: PlatformSection, SolutionsSection, ServicesSection, DevelopersSection
+- [ ] Traduzione completa in italiano: CaseStudiesSection, PricingSection, SupportSection, CompanySection, Footer
+- [ ] Traduzione completa in italiano: Login, Dashboard, NotFound
+- [ ] Fix link Mainnet → https://mainnet.dyneros.com
+- [ ] Fix link Explorer → https://explorer.dyneros.com
+- [ ] Fix link Wallet → https://wallet.dyneros.com
+- [ ] Fix link nel tRPC router (dashboard.data)
+- [ ] Aggiornamento index.html: lang="it", meta tag in italiano

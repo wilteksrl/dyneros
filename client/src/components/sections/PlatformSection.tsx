@@ -31,17 +31,17 @@ function MockWindow({
 
 function ExplorerMock() {
   const txs = [
-    { hash: "0x4f3a...8b2c", block: "1,847,291", time: "2s ago", status: "Confirmed" },
-    { hash: "0x9e1d...3f7a", block: "1,847,290", time: "14s ago", status: "Confirmed" },
-    { hash: "0x2c8b...6d4e", block: "1,847,289", time: "28s ago", status: "Confirmed" },
-    { hash: "0x7a5f...1c9b", block: "1,847,288", time: "42s ago", status: "Confirmed" },
+    { hash: "0x4f3a...8b2c", block: "1,847,291", time: "2s fa", status: "Confermata" },
+    { hash: "0x9e1d...3f7a", block: "1,847,290", time: "14s fa", status: "Confermata" },
+    { hash: "0x2c8b...6d4e", block: "1,847,289", time: "28s fa", status: "Confermata" },
+    { hash: "0x7a5f...1c9b", block: "1,847,288", time: "42s fa", status: "Confermata" },
   ];
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-[oklch(14%_0.007_264)] border border-[oklch(22%_0.008_264)]">
         <Search className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">Search transactions, blocks, addresses...</span>
+        <span className="text-xs text-muted-foreground">Cerca transazioni, blocchi, indirizzi...</span>
       </div>
       <div className="space-y-1">
         {txs.map((tx) => (
@@ -54,7 +54,7 @@ function ExplorerMock() {
               <span className="text-xs font-mono text-[oklch(68%_0.19_72)]">{tx.hash}</span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-muted-foreground hidden sm:block">Block {tx.block}</span>
+              <span className="text-xs text-muted-foreground hidden sm:block">Blocco {tx.block}</span>
               <span className="text-xs text-muted-foreground">{tx.time}</span>
               <span className="text-[10px] font-medium text-[oklch(60%_0.18_145)] bg-[oklch(60%_0.18_145/0.1)] px-2 py-0.5 rounded-full">
                 {tx.status}
@@ -72,7 +72,7 @@ function WalletMock() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Total Balance</p>
+          <p className="text-xs text-muted-foreground mb-1">Saldo Totale</p>
           <p className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             48,291.00
             <span className="text-sm font-normal text-[oklch(68%_0.19_72)] ml-1">DYN</span>
@@ -84,9 +84,9 @@ function WalletMock() {
       </div>
       <div className="space-y-2">
         {[
-          { label: "Send", color: "oklch(68% 0.19 72)" },
-          { label: "Receive", color: "oklch(60% 0.18 145)" },
-          { label: "History", color: "oklch(65% 0.010 264)" },
+          { label: "Invia", color: "oklch(68% 0.19 72)" },
+          { label: "Ricevi", color: "oklch(60% 0.18 145)" },
+          { label: "Cronologia", color: "oklch(65% 0.010 264)" },
         ].map((action) => (
           <div
             key={action.label}
@@ -110,8 +110,8 @@ function DashboardMock() {
       <div className="grid grid-cols-2 gap-2 mb-3">
         {[
           { label: "TPS", value: "1,247" },
-          { label: "Validators", value: "12" },
-          { label: "Blocks", value: "1.8M" },
+          { label: "Validatori", value: "12" },
+          { label: "Blocchi", value: "1.8M" },
           { label: "Uptime", value: "99.9%" },
         ].map((metric) => (
           <div
@@ -150,24 +150,24 @@ function DashboardMock() {
 export default function PlatformSection() {
   const panels = [
     {
-      title: "Explorer — dyneros.com/explorer",
+      title: "Explorer — explorer.dyneros.com",
       icon: Search,
       label: "Explorer",
-      description: "Full transaction and block visibility across the Dyneros Chain.",
+      description: "Visibilità completa su transazioni e blocchi della Dyneros Chain.",
       content: <ExplorerMock />,
     },
     {
       title: "Wallet — wallet.dyneros.com",
       icon: Wallet,
       label: "Wallet",
-      description: "Secure asset and account management for enterprise users.",
+      description: "Gestione sicura degli asset e degli account per utenti enterprise.",
       content: <WalletMock />,
     },
     {
       title: "Network Dashboard",
       icon: BarChart3,
       label: "Dashboard",
-      description: "Real-time chain overview with performance metrics and health indicators.",
+      description: "Panoramica in tempo reale della chain con metriche di performance e indicatori di salute.",
       content: <DashboardMock />,
     },
   ];
@@ -179,17 +179,17 @@ export default function PlatformSection() {
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
             <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-              Platform
+              Piattaforma
             </span>
           </div>
           <h2
             className="text-4xl md:text-5xl font-bold text-foreground mb-4"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            The Full Platform Experience
+            L'Esperienza Completa della Piattaforma
           </h2>
           <p className="text-muted-foreground text-lg">
-            Every tool your team needs to operate, monitor, and manage your blockchain infrastructure.
+            Tutti gli strumenti di cui il tuo team ha bisogno per operare, monitorare e gestire la tua infrastruttura blockchain.
           </p>
         </div>
 

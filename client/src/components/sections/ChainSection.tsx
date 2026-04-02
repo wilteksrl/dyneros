@@ -4,33 +4,33 @@ import { Button } from "@/components/ui/button";
 const features = [
   {
     icon: Lock,
-    title: "Private & Permissioned",
-    description: "Only authorized participants access your network. Full data sovereignty.",
+    title: "Privata e Permissionata",
+    description: "Solo i partecipanti autorizzati accedono alla rete. Piena sovranità sui dati.",
   },
   {
     icon: Code2,
-    title: "Smart Contract Compatible",
-    description: "Deploy and execute smart contracts with familiar tooling and standards.",
+    title: "Compatibile con Smart Contract",
+    description: "Distribuisci ed esegui smart contract con strumenti e standard familiari.",
   },
   {
     icon: Zap,
-    title: "High Throughput",
-    description: "Engineered for enterprise transaction volumes without performance degradation.",
+    title: "Alta Capacità di Elaborazione",
+    description: "Progettata per volumi di transazioni enterprise senza degradazione delle prestazioni.",
   },
   {
     icon: Shield,
-    title: "Enterprise Security",
-    description: "Multi-layer cryptographic security with audit trails and compliance tools.",
+    title: "Sicurezza Enterprise",
+    description: "Sicurezza crittografica multi-livello con audit trail e strumenti di conformità.",
   },
   {
     icon: Server,
-    title: "Custom Deployment",
-    description: "Deploy on your infrastructure or ours. Full configuration control.",
+    title: "Deployment Personalizzato",
+    description: "Distribuisci sulla tua infrastruttura o sulla nostra. Controllo completo della configurazione.",
   },
   {
     icon: Globe,
-    title: "Global Availability",
-    description: "Distributed node architecture ensures resilience and low-latency access.",
+    title: "Disponibilità Globale",
+    description: "L'architettura a nodi distribuiti garantisce resilienza e accesso a bassa latenza.",
   },
 ];
 
@@ -48,7 +48,7 @@ export default function ChainSection() {
         <div className="max-w-3xl mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
             <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-              Core Product
+              Prodotto Core
             </span>
           </div>
           <h2
@@ -58,22 +58,22 @@ export default function ChainSection() {
             Dyneros Chain
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-            A dedicated, high-performance blockchain layer for businesses that need control,
-            predictability, and compliance — without the noise of public networks.
+            Un layer blockchain dedicato e ad alte prestazioni per le aziende che necessitano
+            di controllo, prevedibilità e conformità — senza il rumore delle reti pubbliche.
           </p>
 
           {/* Comparison */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
             <div className="p-4 rounded-lg border border-[oklch(55%_0.22_25/0.3)] bg-[oklch(55%_0.22_25/0.05)]">
-              <p className="text-sm font-semibold text-[oklch(70%_0.18_25)] mb-2">Public chains</p>
+              <p className="text-sm font-semibold text-[oklch(70%_0.18_25)] mb-2">Blockchain pubbliche</p>
               <p className="text-sm text-muted-foreground">
-                Unpredictable costs, public data, no control over your infrastructure.
+                Costi imprevedibili, dati pubblici, nessun controllo sull'infrastruttura.
               </p>
             </div>
             <div className="p-4 rounded-lg border border-[oklch(68%_0.19_72/0.3)] bg-[oklch(68%_0.19_72/0.05)]">
               <p className="text-sm font-semibold text-[oklch(68%_0.19_72)] mb-2">Dyneros Chain</p>
               <p className="text-sm text-muted-foreground">
-                Fixed costs, private data, full ownership of your blockchain environment.
+                Costi fissi, dati privati, piena proprietà del tuo ambiente blockchain.
               </p>
             </div>
           </div>
@@ -107,10 +107,10 @@ export default function ChainSection() {
                 className="text-xl font-semibold text-foreground mb-2"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
-                Network Access
+                Accesso alla Rete
               </h3>
               <p className="text-sm text-muted-foreground">
-                Connect directly to the Dyneros Chain infrastructure.
+                Connettiti direttamente all'infrastruttura Dyneros Chain.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -136,12 +136,12 @@ export default function ChainSection() {
 
           <div className="mt-6 pt-6 border-t border-[oklch(22%_0.008_264)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground italic">
-              "Not a cryptocurrency. An infrastructure."
+              "Non una criptovaluta. Un'infrastruttura."
             </p>
             <div className="flex gap-3">
               <a href="https://explorer.dyneros.com" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="border-[oklch(22%_0.008_264)] hover:border-[oklch(68%_0.19_72/0.4)]">
-                  Open Explorer
+                  Apri Explorer
                 </Button>
               </a>
               <a href="https://wallet.dyneros.com" target="_blank" rel="noopener noreferrer">
@@ -149,7 +149,7 @@ export default function ChainSection() {
                   size="sm"
                   className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
                 >
-                  Access Wallet
+                  Accedi al Wallet
                 </Button>
               </a>
             </div>

@@ -5,20 +5,20 @@ const metrics = [
   {
     icon: Users,
     value: "15+",
-    label: "Core Engineers",
-    detail: "100+ global contributors",
+    label: "Ingegneri Core",
+    detail: "100+ collaboratori globali",
   },
   {
     icon: Globe2,
-    value: "Global",
-    label: "Infrastructure Scope",
-    detail: "Multi-region deployment",
+    value: "Globale",
+    label: "Portata dell'Infrastruttura",
+    detail: "Deployment multi-regione",
   },
   {
     icon: TrendingUp,
     value: "Series A",
-    label: "Growth Stage",
-    detail: "Scaling enterprise adoption",
+    label: "Fase di Crescita",
+    detail: "Espansione adozione enterprise",
   },
 ];
 
@@ -31,26 +31,26 @@ export default function CompanySection() {
           <div className="mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
               <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-                Company
+                Azienda
               </span>
             </div>
             <h2
               className="text-4xl md:text-5xl font-bold text-foreground mb-8"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              The Infrastructure Layer
+              Il Layer Infrastrutturale
               <br />
-              <span className="text-gold-gradient">for the Digital Economy</span>
+              <span className="text-gold-gradient">per l'Economia Digitale</span>
             </h2>
 
             {/* Vision statement */}
             <div className="border-l-2 border-[oklch(68%_0.19_72/0.4)] pl-6">
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Dyneros was founded on the premise that enterprise-grade digital infrastructure
-                should not require a team of specialists to operate. We build the systems that
-                power the next generation of companies — reliable, scalable, and built to last.
-                Our mission is to make blockchain infrastructure as accessible and dependable as
-                cloud computing, without the complexity that has historically limited enterprise adoption.
+                Dyneros è stata fondata sulla premessa che l'infrastruttura digitale di livello enterprise
+                non dovrebbe richiedere un team di specialisti per essere gestita. Costruiamo i sistemi che
+                alimentano la prossima generazione di aziende — affidabili, scalabili e costruiti per durare.
+                La nostra missione è rendere l'infrastruttura blockchain accessibile e affidabile come il
+                cloud computing, senza la complessità che ha storicamente limitato l'adozione enterprise.
               </p>
             </div>
           </div>
@@ -94,10 +94,10 @@ export default function CompanySection() {
                   className="text-2xl font-bold text-foreground mb-2"
                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
-                  Ready to build on Dyneros?
+                  Pronto a costruire su Dyneros?
                 </h3>
                 <p className="text-muted-foreground">
-                  Talk to our team about your infrastructure requirements.
+                  Parla con il nostro team dei tuoi requisiti infrastrutturali.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
@@ -105,7 +105,7 @@ export default function CompanySection() {
                   className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold group"
                   size="lg"
                 >
-                  Contact Us
+                  Contattaci
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button
@@ -116,7 +116,7 @@ export default function CompanySection() {
                     document.querySelector("#chain")?.scrollIntoView({ behavior: "smooth" })
                   }
                 >
-                  Learn More
+                  Scopri di Più
                 </Button>
               </div>
             </div>

@@ -4,39 +4,39 @@ import { Button } from "@/components/ui/button";
 const accessPoints = [
   {
     icon: Network,
-    title: "Network Access",
+    title: "Accesso alla Rete",
     description:
-      "Connect your applications directly to the Dyneros Chain mainnet or a dedicated private instance.",
+      "Connetti le tue applicazioni direttamente alla mainnet Dyneros Chain o a un'istanza privata dedicata.",
     tag: "RPC / WebSocket",
   },
   {
     icon: FileCode2,
-    title: "Smart Contract Deployment",
+    title: "Deploy di Smart Contract",
     description:
-      "Deploy and manage smart contracts on Dyneros Chain using familiar development tooling.",
-    tag: "EVM Compatible",
+      "Distribuisci e gestisci smart contract su Dyneros Chain usando gli strumenti di sviluppo che già conosci.",
+    tag: "EVM Compatibile",
   },
   {
     icon: Plug,
-    title: "API Integration",
+    title: "Integrazione API",
     description:
-      "RESTful and GraphQL APIs for reading chain state, submitting transactions, and monitoring events.",
+      "API RESTful e GraphQL per leggere lo stato della chain, inviare transazioni e monitorare gli eventi.",
     tag: "REST / GraphQL",
   },
 ];
 
-const codeSnippet = `// Connect to Dyneros Chain
+const codeSnippet = `// Connetti a Dyneros Chain
 const provider = new DynerosProvider({
   network: "mainnet",
   endpoint: "https://mainnet.dyneros.com"
 });
 
-// Deploy a contract
+// Deploy di un contratto
 const contract = await provider
   .deploy(abi, bytecode)
   .send({ from: account });
 
-console.log("Deployed at:", contract.address);`;
+console.log("Deployato a:", contract.address);`;
 
 export default function DevelopersSection() {
   return (
@@ -47,18 +47,18 @@ export default function DevelopersSection() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
               <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-                For Builders
+                Per i Costruttori
               </span>
             </div>
             <h2
               className="text-4xl md:text-5xl font-bold text-foreground mb-6"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              Build on Dyneros
+              Costruisci su Dyneros
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-10">
-              Access the Dyneros Chain infrastructure through clean, well-documented interfaces.
-              No internal complexity exposed — just the tools you need to build.
+              Accedi all'infrastruttura Dyneros Chain attraverso interfacce pulite e ben documentate.
+              Nessuna complessità interna esposta — solo gli strumenti di cui hai bisogno per costruire.
             </p>
 
             <div className="space-y-4 mb-10">
@@ -91,7 +91,7 @@ export default function DevelopersSection() {
               className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold group"
               size="lg"
             >
-              Start Building
+              Inizia a Costruire
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
@@ -116,7 +116,6 @@ export default function DevelopersSection() {
                 <pre className="text-xs leading-relaxed font-mono">
                   {codeSnippet.split("\n").map((line, i) => {
                     const isComment = line.trim().startsWith("//");
-                    const isKeyword = /\b(const|await|new|async|import|from|console)\b/.test(line);
                     return (
                       <div key={i} className="flex gap-4">
                         <span className="select-none text-[oklch(30%_0.010_264)] w-4 text-right flex-shrink-0">

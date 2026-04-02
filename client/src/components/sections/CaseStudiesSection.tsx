@@ -4,29 +4,29 @@ const cases = [
   {
     icon: TrendingDown,
     metric: "34%",
-    metricLabel: "Reduction in operational costs",
-    industry: "Logistics",
+    metricLabel: "Riduzione dei costi operativi",
+    industry: "Logistica",
     description:
-      "A global logistics operator migrated document certification to Dyneros Chain, eliminating manual verification workflows and cross-border disputes.",
-    tags: ["Document Management", "Supply Chain"],
+      "Un operatore logistico globale ha migrato la certificazione documentale su Dyneros Chain, eliminando i flussi di verifica manuale e le dispute transfrontaliere.",
+    tags: ["Gestione Documenti", "Supply Chain"],
   },
   {
     icon: Activity,
     metric: "2.1M",
-    metricLabel: "Digital asset transactions in Q1",
+    metricLabel: "Transazioni di asset digitali nel Q1",
     industry: "Gaming",
     description:
-      "A major gaming platform deployed a digital asset economy on Dyneros Chain, enabling verifiable ownership and real-value trading for in-game items.",
-    tags: ["Digital Assets", "Gaming Economy"],
+      "Una grande piattaforma gaming ha distribuito un'economia di asset digitali su Dyneros Chain, abilitando la proprietà verificabile e il trading a valore reale per gli oggetti di gioco.",
+    tags: ["Asset Digitali", "Economia di Gioco"],
   },
   {
     icon: Cpu,
     metric: "60%",
-    metricLabel: "Manual workload eliminated",
+    metricLabel: "Carico di lavoro manuale eliminato",
     industry: "Enterprise",
     description:
-      "A multinational enterprise automated core operational processes using Dyneros Chain smart contracts, replacing manual approval chains and reconciliation.",
-    tags: ["Process Automation", "Enterprise"],
+      "Una multinazionale ha automatizzato i processi operativi core usando gli smart contract Dyneros Chain, sostituendo le catene di approvazione manuale e la riconciliazione.",
+    tags: ["Automazione Processi", "Enterprise"],
   },
 ];
 
@@ -38,17 +38,17 @@ export default function CaseStudiesSection() {
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
             <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-              Proof
+              Prove
             </span>
           </div>
           <h2
             className="text-4xl md:text-5xl font-bold text-foreground mb-4"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Results That Speak
+            Risultati che Parlano
           </h2>
           <p className="text-muted-foreground text-lg">
-            Real deployments. Measurable impact. No marketing fluff.
+            Deployment reali. Impatto misurabile. Nessun marketing vuoto.
           </p>
         </div>
 

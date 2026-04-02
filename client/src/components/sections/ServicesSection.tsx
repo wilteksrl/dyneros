@@ -4,30 +4,30 @@ import { Button } from "@/components/ui/button";
 const services = [
   {
     icon: Code2,
-    title: "Software Development",
+    title: "Sviluppo Software",
     description:
-      "Production-grade software engineered for reliability, performance, and long-term maintainability.",
+      "Software di livello produzione progettato per affidabilità, performance e manutenibilità a lungo termine.",
     number: "01",
   },
   {
     icon: Globe,
-    title: "Web Platforms",
+    title: "Piattaforme Web",
     description:
-      "Scalable web applications built for enterprise traffic, complex workflows, and seamless user experience.",
+      "Applicazioni web scalabili costruite per traffico enterprise, flussi di lavoro complessi e un'esperienza utente fluida.",
     number: "02",
   },
   {
     icon: Link2,
-    title: "Blockchain Solutions",
+    title: "Soluzioni Blockchain",
     description:
-      "End-to-end blockchain integration — from architecture to deployment on Dyneros Chain or custom networks.",
+      "Integrazione blockchain end-to-end — dall'architettura al deployment su Dyneros Chain o reti personalizzate.",
     number: "03",
   },
   {
     icon: Settings2,
-    title: "Custom Systems",
+    title: "Sistemi Personalizzati",
     description:
-      "Bespoke infrastructure and tooling designed around your operational requirements, not the other way around.",
+      "Infrastruttura e strumenti su misura progettati attorno ai tuoi requisiti operativi, non il contrario.",
     number: "04",
   },
 ];
@@ -45,25 +45,25 @@ export default function ServicesSection() {
           <div className="lg:sticky lg:top-32">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
               <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-                Services
+                Servizi
               </span>
             </div>
             <h2
               className="text-4xl md:text-5xl font-bold text-foreground mb-6"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              What We Build
+              Cosa Costruiamo
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-8">
-              From custom software to enterprise blockchain infrastructure — we build systems
-              that work at scale, from day one.
+              Dal software personalizzato all'infrastruttura blockchain enterprise — costruiamo sistemi
+              che funzionano su scala, fin dal primo giorno.
             </p>
             <Button
               variant="outline"
               className="border-[oklch(68%_0.19_72/0.4)] text-[oklch(68%_0.19_72)] hover:bg-[oklch(68%_0.19_72/0.08)] group"
               onClick={scrollToContact}
             >
-              Talk to us
+              Parlaci
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>

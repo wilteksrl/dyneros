@@ -1,29 +1,29 @@
 import { Link } from "wouter";
 
 const links = {
-  Product: [
+  Prodotto: [
     { label: "Dyneros Chain", href: "#chain" },
-    { label: "Platform", href: "#platform" },
-    { label: "Developers", href: "#developers" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Piattaforma", href: "#platform" },
+    { label: "Sviluppatori", href: "#developers" },
+    { label: "Prezzi", href: "#pricing" },
   ],
-  Solutions: [
-    { label: "Manufacturing", href: "#solutions" },
-    { label: "Logistics", href: "#solutions" },
-    { label: "Finance", href: "#solutions" },
+  Soluzioni: [
+    { label: "Manifattura", href: "#solutions" },
+    { label: "Logistica", href: "#solutions" },
+    { label: "Finanza", href: "#solutions" },
     { label: "Gaming", href: "#solutions" },
   ],
-  Network: [
+  Rete: [
     { label: "Mainnet", href: "https://mainnet.dyneros.com", external: true },
     { label: "Explorer", href: "https://explorer.dyneros.com", external: true },
     { label: "Wallet", href: "https://wallet.dyneros.com", external: true },
-    { label: "Status", href: "https://mainnet.dyneros.com", external: true },
+    { label: "Stato Rete", href: "https://mainnet.dyneros.com", external: true },
   ],
-  Company: [
-    { label: "About", href: "#company" },
-    { label: "Services", href: "#services" },
-    { label: "Support", href: "#support" },
-    { label: "Contact", href: "#company" },
+  Azienda: [
+    { label: "Chi Siamo", href: "#company" },
+    { label: "Servizi", href: "#services" },
+    { label: "Supporto", href: "#support" },
+    { label: "Contatti", href: "#company" },
   ],
 };
 
@@ -58,7 +58,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Digital infrastructure for the next generation of companies.
+              Infrastruttura digitale per la prossima generazione di imprese.
             </p>
           </div>
 
@@ -98,14 +98,14 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-[oklch(22%_0.008_264)] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Dyneros Ltd. All rights reserved.
+            © {new Date().getFullYear()} Dyneros Ltd. Tutti i diritti riservati.
           </p>
           <div className="flex items-center gap-6">
             <span className="text-xs text-muted-foreground">Privacy Policy</span>
-            <span className="text-xs text-muted-foreground">Terms of Service</span>
+            <span className="text-xs text-muted-foreground">Termini di Servizio</span>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)] animate-pulse" />
-              <span className="text-xs text-muted-foreground">All systems operational</span>
+              <span className="text-xs text-muted-foreground">Tutti i sistemi operativi</span>
             </div>
           </div>
         </div>

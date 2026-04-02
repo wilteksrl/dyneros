@@ -7,11 +7,11 @@ import { getLoginUrl } from "@/const";
 
 const navLinks = [
   { label: "Chain", href: "#chain" },
-  { label: "Platform", href: "#platform" },
-  { label: "Solutions", href: "#solutions" },
-  { label: "Developers", href: "#developers" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Company", href: "#company" },
+  { label: "Piattaforma", href: "#platform" },
+  { label: "Soluzioni", href: "#solutions" },
+  { label: "Sviluppatori", href: "#developers" },
+  { label: "Prezzi", href: "#pricing" },
+  { label: "Azienda", href: "#company" },
 ];
 
 export default function Navbar() {
@@ -105,15 +105,15 @@ export default function Navbar() {
                     size="sm"
                     className="text-[oklch(65%_0.010_264)] hover:text-foreground"
                   >
-                    Sign In
-                  </Button>
+                  Accedi
+                </Button>
                 </a>
                 <Button
                   size="sm"
                   className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
                   onClick={() => handleAnchor("#contact")}
                 >
-                  Get Started
+                  Inizia Ora
                 </Button>
               </>
             )}
@@ -154,14 +154,14 @@ export default function Navbar() {
                 <>
                   <a href={getLoginUrl()} className="w-full">
                     <Button variant="outline" className="w-full border-border">
-                      Sign In
+                      Accedi
                     </Button>
                   </a>
                   <Button
                     className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
                     onClick={() => handleAnchor("#contact")}
                   >
-                    Get Started
+                    Inizia Ora
                   </Button>
                 </>
               )}

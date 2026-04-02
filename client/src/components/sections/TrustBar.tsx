@@ -1,16 +1,16 @@
 export default function TrustBar() {
   const pillars = [
     {
-      label: "Enterprise-ready infrastructure",
-      description: "Built for compliance, control, and predictability at scale.",
+      label: "Infrastruttura enterprise-ready",
+      description: "Progettata per conformità, controllo e prevedibilità su larga scala.",
     },
     {
-      label: "Global development network",
-      description: "15 core engineers and 100+ contributors across every timezone.",
+      label: "Rete di sviluppo globale",
+      description: "15 ingegneri core e 100+ collaboratori in ogni fuso orario.",
     },
     {
-      label: "Built for scale from day one",
-      description: "Architecture that grows with your business — no re-platforming.",
+      label: "Scalabile fin dal primo giorno",
+      description: "Architettura che cresce con la tua azienda — senza re-platforming.",
     },
   ];
 

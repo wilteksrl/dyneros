@@ -163,7 +163,7 @@ export default function HeroSection() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[oklch(68%_0.19_72/0.3)] bg-[oklch(68%_0.19_72/0.06)] mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-[oklch(68%_0.19_72)] animate-pulse" />
             <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-              Dyneros Chain — Live on Mainnet
+              Dyneros Chain — Attiva su Mainnet
             </span>
           </div>
 
@@ -172,17 +172,17 @@ export default function HeroSection() {
             className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.05]"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Digital Infrastructure
+            Infrastruttura Digitale
             <br />
-            <span className="text-gold-gradient">for the Next Generation</span>
+            <span className="text-gold-gradient">per la Prossima Generazione</span>
             <br />
-            of Companies
+            di Imprese
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Dyneros builds scalable, secure systems for modern businesses —
-            on-chain and beyond.
+            Dyneros costruisce sistemi scalabili e sicuri per le imprese moderne —
+            on-chain e oltre.
           </p>
 
           {/* CTAs */}
@@ -193,7 +193,7 @@ export default function HeroSection() {
               style={{ boxShadow: "0 0 30px oklch(68% 0.19 72 / 0.25)" }}
               onClick={scrollToContact}
             >
-              Get Started
+              Inizia Ora
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
             <Button
@@ -202,7 +202,7 @@ export default function HeroSection() {
               className="text-muted-foreground hover:text-foreground border border-[oklch(22%_0.008_264)] hover:border-[oklch(68%_0.19_72/0.4)] h-12 px-8 text-base"
               onClick={scrollToChain}
             >
-              Explore Dyneros Chain
+              Esplora Dyneros Chain
               <ChevronRight className="ml-1 w-4 h-4" />
             </Button>
           </div>
@@ -210,9 +210,9 @@ export default function HeroSection() {
           {/* Stats row */}
           <div className="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto border-t border-[oklch(22%_0.008_264)] pt-10">
             {[
-              { value: "99.9%", label: "Network Uptime" },
-              { value: "2.1M+", label: "Transactions Processed" },
-              { value: "15+", label: "Enterprise Clients" },
+              { value: "99.9%", label: "Uptime di Rete" },
+              { value: "2.1M+", label: "Transazioni Elaborate" },
+              { value: "15+", label: "Clienti Enterprise" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div

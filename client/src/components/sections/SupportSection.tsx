@@ -1,26 +1,25 @@
 import { MessageSquare, AlertCircle, BookOpen, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const channels = [
   {
     icon: MessageSquare,
-    title: "Live Support",
-    description: "Connect with our technical team in real time for urgent issues and onboarding assistance.",
-    action: "Start Chat",
+    title: "Supporto Live",
+    description: "Connettiti con il nostro team tecnico in tempo reale per problemi urgenti e assistenza all'onboarding.",
+    action: "Avvia Chat",
     href: "#",
   },
   {
     icon: AlertCircle,
-    title: "Network Status",
-    description: "Monitor Dyneros Chain uptime, incident reports, and maintenance windows in real time.",
-    action: "View Status",
+    title: "Stato della Rete",
+    description: "Monitora l'uptime di Dyneros Chain, i report degli incidenti e le finestre di manutenzione in tempo reale.",
+    action: "Visualizza Stato",
     href: "https://mainnet.dyneros.com",
   },
   {
     icon: BookOpen,
-    title: "Documentation",
-    description: "Comprehensive technical documentation, API references, and integration guides.",
-    action: "Read Docs",
+    title: "Documentazione",
+    description: "Documentazione tecnica completa, riferimenti API e guide all'integrazione.",
+    action: "Leggi i Docs",
     href: "#",
   },
 ];
@@ -34,18 +33,18 @@ export default function SupportSection() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
               <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-                Support
+                Supporto
               </span>
             </div>
             <h2
               className="text-4xl md:text-5xl font-bold text-foreground mb-6"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              We're Here When You Need Us
+              Siamo Qui Quando Hai Bisogno
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Enterprise infrastructure requires enterprise-grade support. Our technical team is
-              available across all time zones with structured escalation paths for critical issues.
+              L'infrastruttura enterprise richiede supporto di livello enterprise. Il nostro team tecnico è
+              disponibile in tutti i fusi orari con percorsi di escalation strutturati per i problemi critici.
             </p>
           </div>
 
