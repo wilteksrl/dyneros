@@ -1,31 +1,35 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { getLoginUrl } from "@/const";
-import { Streamdown } from 'streamdown';
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import HeroSection from "@/components/sections/HeroSection";
+import TrustBar from "@/components/sections/TrustBar";
+import ChainSection from "@/components/sections/ChainSection";
+import PlatformSection from "@/components/sections/PlatformSection";
+import SolutionsSection from "@/components/sections/SolutionsSection";
+import ServicesSection from "@/components/sections/ServicesSection";
+import DevelopersSection from "@/components/sections/DevelopersSection";
+import CaseStudiesSection from "@/components/sections/CaseStudiesSection";
+import PricingSection from "@/components/sections/PricingSection";
+import SupportSection from "@/components/sections/SupportSection";
+import CompanySection from "@/components/sections/CompanySection";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
 export default function Home() {
-  // The userAuth hooks provides authentication state
-  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
-
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
-
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
       <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
+        <HeroSection />
+        <TrustBar />
+        <ChainSection />
+        <PlatformSection />
+        <SolutionsSection />
+        <ServicesSection />
+        <DevelopersSection />
+        <CaseStudiesSection />
+        <PricingSection />
+        <SupportSection />
+        <CompanySection />
       </main>
+      <Footer />
     </div>
   );
 }
