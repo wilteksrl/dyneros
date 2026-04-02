@@ -164,7 +164,7 @@ export default function PlatformSection() {
       content: <WalletMock />,
     },
     {
-      title: "Network Dashboard",
+      title: "Dashboard di Rete",
       icon: BarChart3,
       label: "Dashboard",
       description: "Panoramica in tempo reale della chain con metriche di performance e indicatori di salute.",

@@ -123,7 +123,7 @@ export default function Navbar() {
           <button
             className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
+            aria-label="Apri/chiudi menu"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

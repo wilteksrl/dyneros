@@ -63,9 +63,10 @@ export const appRouter = router({
         },
         network: {
           chainId: 1337,
-          rpcEndpoint: "https://rpc.dyneros.io",
-          wsEndpoint: "wss://ws.dyneros.io",
-          explorerUrl: "https://explorer.dyneros.io",
+          rpcEndpoint: "https://mainnet.dyneros.com",
+          wsEndpoint: "wss://mainnet.dyneros.com",
+          explorerUrl: "https://explorer.dyneros.com",
+          walletUrl: "https://wallet.dyneros.com",
         },
       };
     }),

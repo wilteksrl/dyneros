@@ -37,12 +37,12 @@
 - [x] Lighthouse-ready: lazy loading, font optimization
 
 ## Aggiornamenti Richiesti
-- [ ] Traduzione completa in italiano: Navbar, Hero, TrustBar, ChainSection
-- [ ] Traduzione completa in italiano: PlatformSection, SolutionsSection, ServicesSection, DevelopersSection
-- [ ] Traduzione completa in italiano: CaseStudiesSection, PricingSection, SupportSection, CompanySection, Footer
-- [ ] Traduzione completa in italiano: Login, Dashboard, NotFound
-- [ ] Fix link Mainnet → https://mainnet.dyneros.com
-- [ ] Fix link Explorer → https://explorer.dyneros.com
-- [ ] Fix link Wallet → https://wallet.dyneros.com
-- [ ] Fix link nel tRPC router (dashboard.data)
-- [ ] Aggiornamento index.html: lang="it", meta tag in italiano
+- [x] Traduzione completa in italiano: Navbar, Hero, TrustBar, ChainSection
+- [x] Traduzione completa in italiano: PlatformSection, SolutionsSection, ServicesSection, DevelopersSection
+- [x] Traduzione completa in italiano: CaseStudiesSection, PricingSection, SupportSection, CompanySection, Footer
+- [x] Traduzione completa in italiano: Login, Dashboard, NotFound
+- [x] Fix link Mainnet → https://mainnet.dyneros.com
+- [x] Fix link Explorer → https://explorer.dyneros.com
+- [x] Fix link Wallet → https://wallet.dyneros.com
+- [x] Fix link nel tRPC router (dashboard.data)
+- [x] Aggiornamento index.html: lang="it", meta tag in italiano

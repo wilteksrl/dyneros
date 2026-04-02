@@ -1,52 +1,76 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
 
-  const handleGoHome = () => {
-    setLocation("/");
-  };
-
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="pt-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-red-500" />
-            </div>
-          </div>
+    <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+      {/* Background grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(oklch(68% 0.19 72 / 0.04) 1px, transparent 1px), linear-gradient(90deg, oklch(68% 0.19 72 / 0.04) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 60% at 50% 40%, oklch(68% 0.19 72 / 0.05) 0%, transparent 70%)",
+        }}
+      />
 
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
-
-          <h2 className="text-xl font-semibold text-slate-700 mb-4">
-            Page Not Found
-          </h2>
-
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Sorry, the page you are looking for doesn't exist.
-            <br />
-            It may have been moved or deleted.
-          </p>
-
-          <div
-            id="not-found-button-group"
-            className="flex flex-col sm:flex-row gap-3 justify-center"
+      <div className="relative z-10 text-center px-4">
+        {/* Logo */}
+        <a href="/" className="inline-flex items-center gap-3 mb-12 group">
+          <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
+            <polygon
+              points="16,2 30,10 30,22 16,30 2,22 2,10"
+              stroke="oklch(68% 0.19 72)"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <circle cx="16" cy="16" r="3" fill="oklch(68% 0.19 72)" />
+          </svg>
+          <span
+            className="text-xl font-semibold text-gold-gradient"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            <Button
-              onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Go Home
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            Dyneros
+          </span>
+        </a>
+
+        <div
+          className="text-8xl md:text-9xl font-bold text-gold-gradient mb-4"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+          404
+        </div>
+
+        <h1
+          className="text-2xl md:text-3xl font-bold text-foreground mb-4"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+          Pagina Non Trovata
+        </h1>
+
+        <p className="text-muted-foreground text-lg mb-10 max-w-md mx-auto leading-relaxed">
+          La pagina che stai cercando non esiste o è stata spostata.
+        </p>
+
+        <Button
+          onClick={() => setLocation("/")}
+          className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold px-8 h-12 text-base"
+          style={{ boxShadow: "0 0 20px oklch(68% 0.19 72 / 0.2)" }}
+        >
+          <Home className="w-4 h-4 mr-2" />
+          Torna alla Home
+        </Button>
+      </div>
     </div>
   );
 }
