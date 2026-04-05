@@ -46,3 +46,12 @@
 - [x] Fix link Wallet → https://wallet.dyneros.com
 - [x] Fix link nel tRPC router (dashboard.data)
 - [x] Aggiornamento index.html: lang="it", meta tag in italiano
+
+## Pagine Legali (Aggiornamento)
+- [ ] Privacy Policy GDPR (IT/EN) — /privacy-policy
+- [ ] Cookie Policy (IT/EN) + banner cookie conforme Garante 2021 — /cookie-policy
+- [ ] Termini e Condizioni (IT/EN) — /terms
+- [ ] Disclaimer Legale (IT/EN) — /disclaimer
+- [ ] AML/KYC Policy (IT/EN) — /aml-kyc
+- [ ] Aggiornamento Footer con link a tutte le pagine legali
+- [ ] Route in App.tsx per tutte le pagine legali
