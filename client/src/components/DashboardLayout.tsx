@@ -37,6 +37,7 @@ import {
   Key,
   LayoutDashboard,
   LogOut,
+  Mail,
   PanelLeft,
   Receipt,
   Search,
@@ -95,6 +96,7 @@ const menuGroups = [
       { icon: Settings, label: "Impostazioni", path: "/dashboard/settings" },
       { icon: Shield, label: "Sicurezza", path: "/dashboard/security" },
       { icon: Key, label: "API / Accessi", path: "/dashboard/api-keys" },
+      { icon: Mail, label: "Email & Notifiche", path: "/dashboard/email-settings" },
     ],
   },
 ];

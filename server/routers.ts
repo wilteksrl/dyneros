@@ -3,6 +3,19 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import {
+  sendEmail,
+  verifySmtp,
+  templateWelcome,
+  templatePasswordReset,
+  templateEmailVerification,
+  templateNewTicket,
+  templateTicketUpdate,
+  templateContractExpiry,
+  templateInvoiceOverdue,
+  templateMilestoneAlert,
+  templateCriticalAlert,
+} from "./email";
 
 const GOLD_CHAIN = {
   chainId: 24589,
@@ -311,6 +324,153 @@ export const appRouter = router({
           explorerUrl: "https://explorer.dyneros.com",
           walletUrl: "https://wallet.dyneros.com",
         },
+      };
+    }),
+  }),
+
+  email: router({
+    verifySmtp: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") return { ok: false, error: "Accesso negato" };
+      return verifySmtp();
+    }),
+
+    sendTest: protectedProcedure
+      .input(z.object({ to: z.string().email() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") return { ok: false, error: "Accesso negato" };
+        const tpl = templateCriticalAlert({
+          clientName: ctx.user.name ?? "Utente",
+          alertTitle: "Test Email Sistema Dyneros",
+          alertMessage: "Questa è un'email di test per verificare la configurazione SMTP della piattaforma Dyneros. Se hai ricevuto questo messaggio, la configurazione è corretta.",
+          severity: "high",
+          affectedService: "Sistema Email",
+          timestamp: new Date().toLocaleString("it-IT"),
+          dashboardUrl: "https://dyneros.com/dashboard",
+        });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendWelcome: protectedProcedure
+      .input(z.object({ to: z.string().email(), name: z.string(), customerId: z.string() }))
+      .mutation(async ({ input }) => {
+        const tpl = templateWelcome({ name: input.name, dashboardUrl: "https://dyneros.com/dashboard", customerId: input.customerId });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendPasswordReset: publicProcedure
+      .input(z.object({ to: z.string().email(), name: z.string(), resetUrl: z.string().url() }))
+      .mutation(async ({ input }) => {
+        const tpl = templatePasswordReset({ name: input.name, resetUrl: input.resetUrl, expiresIn: "1 ora" });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendEmailVerification: publicProcedure
+      .input(z.object({ to: z.string().email(), name: z.string(), verifyUrl: z.string().url() }))
+      .mutation(async ({ input }) => {
+        const tpl = templateEmailVerification({ name: input.name, verifyUrl: input.verifyUrl });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendNewTicket: protectedProcedure
+      .input(z.object({
+        to: z.string().email(),
+        clientName: z.string(),
+        ticketId: z.string(),
+        subject: z.string(),
+        priority: z.string(),
+        category: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const tpl = templateNewTicket({ ...input, dashboardUrl: `https://dyneros.com/dashboard/tickets` });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendTicketUpdate: protectedProcedure
+      .input(z.object({
+        to: z.string().email(),
+        clientName: z.string(),
+        ticketId: z.string(),
+        subject: z.string(),
+        status: z.string(),
+        message: z.string(),
+        author: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const tpl = templateTicketUpdate({ ...input, dashboardUrl: `https://dyneros.com/dashboard/tickets` });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendContractExpiry: protectedProcedure
+      .input(z.object({
+        to: z.string().email(),
+        clientName: z.string(),
+        contractName: z.string(),
+        contractId: z.string(),
+        expiryDate: z.string(),
+        daysLeft: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const tpl = templateContractExpiry({ ...input, dashboardUrl: "https://dyneros.com/dashboard/contracts" });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendInvoiceOverdue: protectedProcedure
+      .input(z.object({
+        to: z.string().email(),
+        clientName: z.string(),
+        invoiceId: z.string(),
+        amount: z.number(),
+        currency: z.string(),
+        dueDate: z.string(),
+        description: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const tpl = templateInvoiceOverdue({ ...input, dashboardUrl: "https://dyneros.com/dashboard/invoices" });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendMilestoneAlert: protectedProcedure
+      .input(z.object({
+        to: z.string().email(),
+        clientName: z.string(),
+        milestoneName: z.string(),
+        projectName: z.string(),
+        projectId: z.string(),
+        date: z.string(),
+        daysLeft: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const tpl = templateMilestoneAlert({ ...input, dashboardUrl: `https://dyneros.com/dashboard/projects` });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    sendCriticalAlert: protectedProcedure
+      .input(z.object({
+        to: z.string().email(),
+        clientName: z.string(),
+        alertTitle: z.string(),
+        alertMessage: z.string(),
+        severity: z.enum(["critical", "high"]),
+        affectedService: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const tpl = templateCriticalAlert({
+          ...input,
+          timestamp: new Date().toLocaleString("it-IT"),
+          dashboardUrl: "https://dyneros.com/dashboard",
+        });
+        return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
+      }),
+
+    smtpConfig: protectedProcedure.query(({ ctx }) => {
+      if (ctx.user.role !== "admin") return null;
+      return {
+        host: process.env.SMTP_HOST ?? "",
+        port: process.env.SMTP_PORT ?? "587",
+        user: process.env.SMTP_USER ?? "",
+        fromName: process.env.SMTP_FROM_NAME ?? "",
+        fromEmail: process.env.SMTP_FROM_EMAIL ?? "",
+        configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
       };
     }),
   }),

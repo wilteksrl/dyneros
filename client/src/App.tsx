@@ -29,6 +29,7 @@ import DashSettings from "./pages/DashSettings";
 import DashSecurity from "./pages/DashSecurity";
 import DashApiKeys from "./pages/DashApiKeys";
 import DashKnowledgeBase from "./pages/DashKnowledgeBase";
+import DashEmailSettings from "./pages/DashEmailSettings";
 
 function Router() {
   return (
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/dashboard/security" component={DashSecurity} />
       <Route path="/dashboard/api-keys" component={DashApiKeys} />
       <Route path="/dashboard/knowledge-base" component={DashKnowledgeBase} />
+      <Route path="/dashboard/email-settings" component={DashEmailSettings} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/cookie-policy" component={CookiePolicy} />
       <Route path="/terms" component={Terms} />

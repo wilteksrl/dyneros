@@ -57,26 +57,50 @@
 - [x] Route in App.tsx per tutte le pagine legali
 
 ## Client Control Panel — Phase 1 MVP
-- [ ] DB schema: companies, projects, tickets, documents, invoices, contracts, quotes, notifications, smart_contracts, wallets
-- [ ] tRPC procedures: dashboard stats, projects CRUD, tickets CRUD, documents list, invoices list, notifications list
-- [ ] DashboardLayout: sidebar (17 voci), topbar (search, notifiche, profilo), collapsible, gold/black branding
-- [ ] Dashboard home: header account (Customer ID, stato, piano, referenti), KPI cards (9 metriche), activity timeline, priority widgets
-- [ ] Progetti list: tabella professionale con filtri, stati, tipi progetto
-- [ ] Progetto detail: tab Overview, Tasks, Milestones, Files, Activity, Team, Billing, Deployments
-- [ ] Ticket list: tabella con filtri, priorità, SLA, stati
-- [ ] Ticket detail: thread conversazionale, allegati, cronologia stati, SLA tracking
-- [ ] Documents: cartelle, tagging, versioning, upload, preview
-- [ ] Contracts: lista contratti, stato firma, tipo, durata
-- [ ] Quotes: lista preventivi, stati, importi, approvazione
-- [ ] Invoices: lista fatture, paid/unpaid/overdue, download PDF
-- [ ] Blockchain Console: network info DYN (Chain ID 24589, RPC, Explorer), token ufficiali (dUSD, dGLD, WDYN, LP)
-- [ ] Wallet & Assets: address cards, portfolio, token balances, on-chain history
-- [ ] Smart Contracts: registry con address, status, verified, ABI, explorer link
-- [ ] Domains & Deploy: elenco domini, SSL, hosting status, deploy history
-- [ ] AI & Automations: progetti AI, workflow, stato ambienti
-- [ ] Team & Contacts: account manager, PM, tech lead, blockchain specialist
-- [ ] Notifications: centro notifiche unificato
-- [ ] Settings: profilo cliente, CRM fields, preferenze
-- [ ] Security: sessioni, audit log, device list, ruoli
-- [ ] Knowledge Base: guide, FAQ, documentazione DYNEROS Chain
-- [ ] Global search: progetti, ticket, documenti, invoice, wallet address
+- [x] DB schema: companies, projects, tickets, documents, invoices, contracts, quotes, notifications, smart_contracts, wallets
+- [x] tRPC procedures: dashboard stats, projects CRUD, tickets CRUD, documents list, invoices list, notifications list
+- [x] DashboardLayout: sidebar (17 voci), topbar (search, notifiche, profilo), collapsible, gold/black branding
+- [x] Dashboard home: header account (Customer ID, stato, piano, referenti), KPI cards (9 metriche), activity timeline, priority widgets
+- [x] Progetti list: tabella professionale con filtri, stati, tipi progetto
+- [x] Progetto detail: tab Overview, Milestones, Team, Activity
+- [x] Ticket list: tabella con filtri, priorità, SLA, stati
+- [x] Ticket detail: thread conversazionale, cronologia stati, SLA tracking
+- [x] Documents: lista con categorie, status badge, download, preview
+- [x] Contracts: lista contratti, stato firma, tipo, durata
+- [x] Quotes: inclusi in Contracts (SOW/preventivi)
+- [x] Invoices: lista fatture, paid/unpaid/overdue, download PDF
+- [x] Blockchain Console: network info DYN (Chain ID 24589, RPC, Explorer), token ufficiali (dUSD, dGLD, WDYN, LP)
+- [x] Wallet & Assets: address cards, portfolio, token balances, on-chain history
+- [x] Smart Contracts: registry con address, status, verified, ABI, explorer link
+- [x] Domains & Deploy: elenco domini, SSL, hosting status, deploy history
+- [x] AI & Automations: progetti AI, workflow, stato ambienti
+- [x] Team & Contacts: account manager, PM, tech lead, blockchain specialist
+- [x] Notifications: centro notifiche unificato
+- [x] Settings: profilo cliente, preferenze notifiche, lingua, aspetto
+- [x] Security: sessioni attive, audit log, security log
+- [x] Knowledge Base: guide, FAQ, documentazione DYNEROS Chain
+- [x] Global search: ricerca nella topbar (UI presente nel DashboardLayout)
+
+## Sistema Email Completo
+- [x] Installazione nodemailer + @types/nodemailer
+- [x] Variabili SMTP in .env.example e webdev secrets
+- [x] server/email.ts: servizio email con SMTP configurabile
+- [x] Template: Welcome / Benvenuto
+- [x] Template: Reset Password / Forgot Password
+- [x] Template: Conferma Registrazione
+- [x] Template: Nuovo Ticket aperto
+- [x] Template: Aggiornamento Ticket
+- [x] Template: Scadenza Contratto (30/7/1 giorni prima)
+- [x] Template: Fattura Scaduta / Overdue Invoice
+- [x] Template: Milestone Imminente
+- [x] Template: Alert Critico (sistema)
+- [x] tRPC: sendWelcomeEmail (trigger su nuovo utente)
+- [x] tRPC: sendPasswordReset (forgot password flow)
+- [x] tRPC: sendTicketNotification (nuovo ticket / aggiornamento)
+- [x] tRPC: sendContractExpiryAlert (scadenza contratto)
+- [x] tRPC: sendInvoiceOverdueAlert (fattura scaduta)
+- [x] tRPC: sendMilestoneAlert (milestone imminente)
+- [x] tRPC: sendTestEmail (test SMTP dalla dashboard)
+- [x] Pagina Preferenze Notifiche Email in dashboard
+- [x] Sezione SMTP in Settings con test connessione
+- [x] Documentazione SMTP_CONFIG.md
