@@ -13,13 +13,45 @@ import Terms from "./pages/Terms";
 import Disclaimer from "./pages/Disclaimer";
 import AmlKyc from "./pages/AmlKyc";
 import CookieBanner from "./components/CookieBanner";
+import DashProjects from "./pages/DashProjects";
+import DashTickets from "./pages/DashTickets";
+import DashDocuments from "./pages/DashDocuments";
+import DashContracts from "./pages/DashContracts";
+import DashInvoices from "./pages/DashInvoices";
+import DashBlockchain from "./pages/DashBlockchain";
+import DashWallet from "./pages/DashWallet";
+import DashSmartContracts from "./pages/DashSmartContracts";
+import DashDomains from "./pages/DashDomains";
+import DashAI from "./pages/DashAI";
+import DashTeam from "./pages/DashTeam";
+import DashNotifications from "./pages/DashNotifications";
+import DashSettings from "./pages/DashSettings";
+import DashSecurity from "./pages/DashSecurity";
+import DashApiKeys from "./pages/DashApiKeys";
+import DashKnowledgeBase from "./pages/DashKnowledgeBase";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
       <Route path="/login" component={Login} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard/projects" component={DashProjects} />
+      <Route path="/dashboard/tickets" component={DashTickets} />
+      <Route path="/dashboard/documents" component={DashDocuments} />
+      <Route path="/dashboard/contracts" component={DashContracts} />
+      <Route path="/dashboard/invoices" component={DashInvoices} />
+      <Route path="/dashboard/blockchain" component={DashBlockchain} />
+      <Route path="/dashboard/wallet" component={DashWallet} />
+      <Route path="/dashboard/smart-contracts" component={DashSmartContracts} />
+      <Route path="/dashboard/domains" component={DashDomains} />
+      <Route path="/dashboard/ai" component={DashAI} />
+      <Route path="/dashboard/team" component={DashTeam} />
+      <Route path="/dashboard/notifications" component={DashNotifications} />
+      <Route path="/dashboard/settings" component={DashSettings} />
+      <Route path="/dashboard/security" component={DashSecurity} />
+      <Route path="/dashboard/api-keys" component={DashApiKeys} />
+      <Route path="/dashboard/knowledge-base" component={DashKnowledgeBase} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/cookie-policy" component={CookiePolicy} />
       <Route path="/terms" component={Terms} />

@@ -48,10 +48,35 @@
 - [x] Aggiornamento index.html: lang="it", meta tag in italiano
 
 ## Pagine Legali (Aggiornamento)
-- [ ] Privacy Policy GDPR (IT/EN) — /privacy-policy
-- [ ] Cookie Policy (IT/EN) + banner cookie conforme Garante 2021 — /cookie-policy
-- [ ] Termini e Condizioni (IT/EN) — /terms
-- [ ] Disclaimer Legale (IT/EN) — /disclaimer
-- [ ] AML/KYC Policy (IT/EN) — /aml-kyc
-- [ ] Aggiornamento Footer con link a tutte le pagine legali
-- [ ] Route in App.tsx per tutte le pagine legali
+- [x] Privacy Policy GDPR (IT/EN) — /privacy-policy
+- [x] Cookie Policy (IT/EN) + banner cookie conforme Garante 2021 — /cookie-policy
+- [x] Termini e Condizioni (IT/EN) — /terms
+- [x] Disclaimer Legale (IT/EN) — /disclaimer
+- [x] AML/KYC Policy (IT/EN) — /aml-kyc
+- [x] Aggiornamento Footer con link a tutte le pagine legali
+- [x] Route in App.tsx per tutte le pagine legali
+
+## Client Control Panel — Phase 1 MVP
+- [ ] DB schema: companies, projects, tickets, documents, invoices, contracts, quotes, notifications, smart_contracts, wallets
+- [ ] tRPC procedures: dashboard stats, projects CRUD, tickets CRUD, documents list, invoices list, notifications list
+- [ ] DashboardLayout: sidebar (17 voci), topbar (search, notifiche, profilo), collapsible, gold/black branding
+- [ ] Dashboard home: header account (Customer ID, stato, piano, referenti), KPI cards (9 metriche), activity timeline, priority widgets
+- [ ] Progetti list: tabella professionale con filtri, stati, tipi progetto
+- [ ] Progetto detail: tab Overview, Tasks, Milestones, Files, Activity, Team, Billing, Deployments
+- [ ] Ticket list: tabella con filtri, priorità, SLA, stati
+- [ ] Ticket detail: thread conversazionale, allegati, cronologia stati, SLA tracking
+- [ ] Documents: cartelle, tagging, versioning, upload, preview
+- [ ] Contracts: lista contratti, stato firma, tipo, durata
+- [ ] Quotes: lista preventivi, stati, importi, approvazione
+- [ ] Invoices: lista fatture, paid/unpaid/overdue, download PDF
+- [ ] Blockchain Console: network info DYN (Chain ID 24589, RPC, Explorer), token ufficiali (dUSD, dGLD, WDYN, LP)
+- [ ] Wallet & Assets: address cards, portfolio, token balances, on-chain history
+- [ ] Smart Contracts: registry con address, status, verified, ABI, explorer link
+- [ ] Domains & Deploy: elenco domini, SSL, hosting status, deploy history
+- [ ] AI & Automations: progetti AI, workflow, stato ambienti
+- [ ] Team & Contacts: account manager, PM, tech lead, blockchain specialist
+- [ ] Notifications: centro notifiche unificato
+- [ ] Settings: profilo cliente, CRM fields, preferenze
+- [ ] Security: sessioni, audit log, device list, ruoli
+- [ ] Knowledge Base: guide, FAQ, documentazione DYNEROS Chain
+- [ ] Global search: progetti, ticket, documenti, invoice, wallet address

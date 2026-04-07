@@ -1,311 +1,294 @@
-import { useEffect } from "react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
-import { Button } from "@/components/ui/button";
 import {
   Activity,
-  BarChart3,
-  ExternalLink,
-  Globe,
-  LogOut,
-  Network,
-  Search,
-  Settings,
-  Shield,
-  User,
+  AlertTriangle,
+  ArrowRight,
+  Box,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  CircuitBoard,
+  Clock,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Mail,
+  Plus,
+  Receipt,
+  Server,
+  Ticket,
+  TrendingUp,
+  Users,
   Wallet,
   Zap,
 } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
 
-const networkServices = [
-  {
-    icon: Search,
-    name: "Explorer",
-    description: "Sfoglia transazioni e blocchi",
-    href: "https://explorer.dyneros.com",
-    status: "live",
-  },
-  {
-    icon: Wallet,
-    name: "Wallet",
-    description: "Gestisci asset e account",
-    href: "https://wallet.dyneros.com",
-    status: "live",
-  },
-  {
-    icon: Network,
-    name: "Mainnet",
-    description: "Endpoint della rete principale",
-    href: "https://mainnet.dyneros.com",
-    status: "live",
-  },
-  {
-    icon: BarChart3,
-    name: "Analytics",
-    description: "Metriche di performance della rete",
-    href: "#",
-    status: "soon",
-  },
-];
+const GOLD = "oklch(68% 0.19 72)";
+const GOLD_DIM = "oklch(68% 0.19 72 / 0.12)";
+const BORDER = "oklch(20% 0.008 264)";
+const CARD_BG = "oklch(10% 0.006 264)";
 
-const networkStats = [
-  { label: "Stato Rete", value: "Operativa", color: "oklch(60% 0.18 145)" },
-  { label: "Ultimo Blocco", value: "1,847,412", color: "oklch(68% 0.19 72)" },
-  { label: "TPS", value: "1,247", color: "oklch(68% 0.19 72)" },
-  { label: "Validatori", value: "12 Attivi", color: "oklch(68% 0.19 72)" },
-];
+const activityIcons: Record<string, React.ElementType> = {
+  ticket: Ticket,
+  invoice: Receipt,
+  milestone: CheckCircle2,
+  deploy: Server,
+  contract: FileText,
+  project: FolderOpen,
+};
 
-export default function Dashboard() {
-  const { user, isAuthenticated, loading, logout } = useAuth();
-  const [, navigate] = useLocation();
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      logout();
-      navigate("/");
-    },
-  });
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate("/login");
-    }
-  }, [isAuthenticated, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-[oklch(68%_0.19_72)] border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Caricamento dashboard...</p>
+function KpiCard({ icon: Icon, label, value, sub, accent }: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className="rounded-xl border p-4 flex flex-col gap-3"
+      style={{ background: CARD_BG, borderColor: accent ? "oklch(68% 0.19 72 / 0.3)" : BORDER }}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
+        <div className="h-7 w-7 rounded-lg flex items-center justify-center"
+          style={{ background: accent ? GOLD_DIM : "oklch(15% 0.008 264)" }}>
+          <Icon className="h-3.5 w-3.5" style={{ color: accent ? GOLD : "oklch(55% 0.05 264)" }} />
         </div>
       </div>
+      <div>
+        <p className="text-2xl font-semibold tracking-tight" style={accent ? { color: GOLD } : {}}>{value}</p>
+        {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const labels: Record<string, string> = {
+    active: "Attivo", in_progress: "In Corso", open: "Aperto",
+    critical: "Critico", high: "Alta", medium: "Media", low: "Bassa",
+  };
+  const colors: Record<string, string> = {
+    active: "oklch(60% 0.18 145)", in_progress: GOLD, open: "oklch(55% 0.18 220)",
+    critical: "oklch(55% 0.22 25)", high: "oklch(60% 0.2 35)", medium: GOLD, low: "oklch(60% 0.18 145)",
+  };
+  const c = colors[status] || "oklch(55% 0.05 264)";
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border"
+      style={{ color: c, borderColor: `${c}40`, background: `${c}12` }}>
+      <span className="h-1.5 w-1.5 rounded-full inline-block" style={{ background: c }} />
+      {labels[status] || status}
+    </span>
+  );
+}
+
+export default function Dashboard() {
+  const { data, isLoading } = trpc.dashboard.stats.useQuery();
+  const [, setLocation] = useLocation();
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} />
+        </div>
+      </DashboardLayout>
     );
   }
 
-  if (!isAuthenticated) return null;
+  if (!data) return null;
+
+  const kpiItems = [
+    { icon: Activity, label: "Progetti Attivi", value: data.kpi.activeProjects, sub: "in lavorazione", accent: true },
+    { icon: Ticket, label: "Ticket Aperti", value: data.kpi.openTickets, sub: "da gestire" },
+    { icon: Receipt, label: "Fatture in Sospeso", value: data.kpi.pendingInvoices, sub: "da pagare" },
+    { icon: Server, label: "Ambienti Online", value: data.kpi.onlineEnvironments, sub: "prod + staging" },
+    { icon: Box, label: "Smart Contracts", value: data.kpi.deployedContracts, sub: "su DYNEROS Chain" },
+    { icon: Wallet, label: "Wallet Collegati", value: data.kpi.connectedWallets, sub: "self-custody" },
+    { icon: Zap, label: "Servizi Attivi", value: data.kpi.activeServices, sub: "in abbonamento" },
+    { icon: CheckCircle2, label: "Task Completati", value: data.kpi.completedTasksMonth, sub: "questo mese" },
+    { icon: FileText, label: "Documenti", value: data.kpi.documentsShared, sub: "nel portale" },
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-[oklch(22%_0.008_264)] bg-[oklch(10%_0.006_264)]">
-        <div className="container">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <a href="/" className="flex items-center gap-2">
-                <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-                  <polygon
-                    points="16,2 30,10 30,22 16,30 2,22 2,10"
-                    stroke="oklch(68% 0.19 72)"
-                    strokeWidth="1.5"
-                    fill="none"
-                  />
-                  <circle cx="16" cy="16" r="3" fill="oklch(68% 0.19 72)" />
-                </svg>
-                <span
-                  className="font-semibold text-gold-gradient"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
-                  Dyneros
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto space-y-6">
+
+        <div className="rounded-xl border p-5"
+          style={{ background: "oklch(9% 0.006 264)", borderColor: "oklch(68% 0.19 72 / 0.2)" }}>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: GOLD_DIM, border: `1px solid oklch(68% 0.19 72 / 0.3)` }}>
+                <span className="text-base font-bold" style={{ color: GOLD }}>
+                  {data.customerId.slice(-2)}
                 </span>
-              </a>
-              <div className="hidden md:flex items-center gap-1 text-xs text-muted-foreground">
-                <span>/</span>
-                <span className="text-foreground font-medium">Dashboard</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg font-semibold">Workspace Operativo</h1>
+                  <StatusBadge status={data.accountStatus} />
+                </div>
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                  <span className="text-xs font-mono text-muted-foreground">{data.customerId}</span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs font-semibold" style={{ color: GOLD }}>{data.tier}</span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">Ultimo accesso: oggi</span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[oklch(14%_0.007_264)] border border-[oklch(22%_0.008_264)]">
-                <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)] animate-pulse" />
-                <span className="text-xs text-muted-foreground">Rete Operativa</span>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[oklch(15%_0.008_264)]">
+                  <Users className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{data.accountManager.name}</p>
+                  <p>{data.accountManager.role}</p>
+                </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground gap-2"
-                onClick={() => logoutMutation.mutate()}
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Esci</span>
-              </Button>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[oklch(15%_0.008_264)]">
+                  <CircuitBoard className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{data.techLead.name}</p>
+                  <p>{data.techLead.role}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLocation("/dashboard/tickets")}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg border transition-colors hover:bg-[oklch(15%_0.008_264)]"
+                  style={{ borderColor: BORDER }}>
+                  <Plus className="h-3 w-3" />
+                  Nuova Richiesta
+                </button>
+                <button
+                  onClick={() => setLocation("/dashboard/team")}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg transition-colors"
+                  style={{ background: GOLD, color: "#000" }}>
+                  <Mail className="h-3 w-3" />
+                  Contatta Dyneros
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="container py-8">
-        {/* Welcome */}
-        <div className="mb-8">
-          <h1
-            className="text-2xl md:text-3xl font-bold text-foreground mb-1"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Bentornato{user?.name ? `, ${user.name}` : ""}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Gestisci la tua infrastruttura e i tuoi servizi Dyneros da qui.
-          </p>
-        </div>
-
-        {/* Network Status Widget */}
-        <div className="mb-8 p-6 rounded-2xl border border-[oklch(22%_0.008_264)] bg-[oklch(12%_0.006_264)]">
-          <div className="flex items-center gap-2 mb-5">
-            <Activity className="w-4 h-4 text-[oklch(68%_0.19_72)]" />
-            <h2
-              className="font-semibold text-foreground"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              Stato della Rete
-            </h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {networkStats.map((stat) => (
-              <div
-                key={stat.label}
-                className="p-4 rounded-xl bg-[oklch(10%_0.006_264)] border border-[oklch(22%_0.008_264)]"
-              >
-                <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-wider">
-                  {stat.label}
-                </p>
-                <p
-                  className="text-lg font-bold"
-                  style={{
-                    color: stat.color,
-                    fontFamily: "'Space Grotesk', sans-serif",
-                  }}
-                >
-                  {stat.value}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {kpiItems.map((k) => (
+            <KpiCard key={k.label} {...k} />
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Service Access Panel */}
-          <div className="lg:col-span-2">
-            <div className="p-6 rounded-2xl border border-[oklch(22%_0.008_264)] bg-[oklch(12%_0.006_264)]">
-              <div className="flex items-center gap-2 mb-5">
-                <Globe className="w-4 h-4 text-[oklch(68%_0.19_72)]" />
-                <h2
-                  className="font-semibold text-foreground"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
-                  Accesso ai Servizi
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {networkServices.map((service) => (
-                  <a
-                    key={service.name}
-                    href={service.href}
-                    target={service.href !== "#" ? "_blank" : undefined}
-                    rel="noopener noreferrer"
-                    onClick={
-                      service.href === "#"
-                        ? (e) => {
-                            e.preventDefault();
-                            toast.info("Funzionalità in arrivo");
-                          }
-                        : undefined
-                    }
-                    className="flex items-start gap-4 p-4 rounded-xl border border-[oklch(22%_0.008_264)] bg-[oklch(10%_0.006_264)] hover:border-[oklch(68%_0.19_72/0.3)] hover:bg-[oklch(68%_0.19_72/0.04)] transition-all group"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-[oklch(68%_0.19_72/0.1)] flex items-center justify-center flex-shrink-0 group-hover:bg-[oklch(68%_0.19_72/0.15)] transition-colors">
-                      <service.icon className="w-4 h-4 text-[oklch(68%_0.19_72)]" />
+          <div className="lg:col-span-2 rounded-xl border p-5" style={{ background: CARD_BG, borderColor: BORDER }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold">Attività Recenti</h2>
+              <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                Vedi tutto <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {data.recentActivity.map((item) => {
+                const Icon = activityIcons[item.icon] || Activity;
+                return (
+                  <div key={item.id} className="flex items-start gap-3">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: "oklch(15% 0.008 264)" }}>
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-foreground text-sm">{service.name}</span>
-                        {service.status === "soon" ? (
-                          <span className="text-[10px] font-medium text-muted-foreground bg-[oklch(18%_0.008_264)] px-1.5 py-0.5 rounded-full">
-                            Presto
-                          </span>
-                        ) : (
-                          <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{service.description}</p>
+                      <p className="text-sm leading-snug">{item.text}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.time}</p>
                     </div>
-                  </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {data.nextMilestone && (
+              <div className="rounded-xl border p-4"
+                style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.2)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="h-4 w-4" style={{ color: GOLD }} />
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: GOLD }}>Prossima Milestone</p>
+                </div>
+                <p className="text-sm font-semibold">{data.nextMilestone.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{data.nextMilestone.project}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{data.nextMilestone.date}</span>
+                  <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: GOLD_DIM, color: GOLD }}>
+                    {data.nextMilestone.daysLeft}gg
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {data.criticalTickets.length > 0 && (
+              <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="h-4 w-4 text-orange-400" />
+                  <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">Ticket Prioritari</p>
+                </div>
+                <div className="space-y-2.5">
+                  {data.criticalTickets.map((t) => (
+                    <div key={t.id} className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{t.subject}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-mono text-muted-foreground">{t.id}</span>
+                          <StatusBadge status={t.priority} />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setLocation("/dashboard/tickets")}
+                        className="shrink-0 h-6 w-6 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors">
+                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accesso Rapido</p>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { label: "Progetti", icon: Activity, path: "/dashboard/projects" },
+                  { label: "Ticket", icon: Ticket, path: "/dashboard/tickets" },
+                  { label: "Fatture", icon: Receipt, path: "/dashboard/invoices" },
+                  { label: "Blockchain", icon: CircuitBoard, path: "/dashboard/blockchain" },
+                  { label: "Wallet", icon: Wallet, path: "/dashboard/wallet" },
+                  { label: "Documenti", icon: FolderOpen, path: "/dashboard/documents" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => setLocation(item.path)}
+                    className="flex items-center gap-2 p-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-[oklch(15%_0.008_264)] transition-colors text-left">
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    {item.label}
+                  </button>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Account Management */}
-          <div className="space-y-4">
-            {/* Profile */}
-            <div className="p-6 rounded-2xl border border-[oklch(22%_0.008_264)] bg-[oklch(12%_0.006_264)]">
-              <div className="flex items-center gap-2 mb-5">
-                <User className="w-4 h-4 text-[oklch(68%_0.19_72)]" />
-                <h2
-                  className="font-semibold text-foreground"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
-                  Account
-                </h2>
-              </div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[oklch(68%_0.19_72/0.15)] flex items-center justify-center flex-shrink-0">
-                  <span
-                    className="text-sm font-bold text-[oklch(68%_0.19_72)]"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                  >
-                    {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">
-                    {user?.name ?? "Utente"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user?.email ?? "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between py-2 border-t border-[oklch(22%_0.008_264)]">
-                  <span className="text-xs text-muted-foreground">Piano</span>
-                  <span className="text-xs font-medium text-[oklch(68%_0.19_72)]">Starter</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-t border-[oklch(22%_0.008_264)]">
-                  <span className="text-xs text-muted-foreground">Stato</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)]" />
-                    <span className="text-xs font-medium text-foreground">Attivo</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Security */}
-            <div className="p-5 rounded-2xl border border-[oklch(22%_0.008_264)] bg-[oklch(12%_0.006_264)]">
-              <div className="flex items-center gap-2 mb-3">
-                <Shield className="w-4 h-4 text-[oklch(68%_0.19_72)]" />
-                <h3 className="font-semibold text-foreground text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Sicurezza
-                </h3>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                La tua sessione è protetta con crittografia end-to-end.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-[oklch(22%_0.008_264)] text-xs hover:border-[oklch(68%_0.19_72/0.4)]"
-                onClick={() => toast.info("Impostazioni in arrivo")}
-              >
-                <Settings className="w-3.5 h-3.5 mr-2" />
-                Gestisci Impostazioni
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
