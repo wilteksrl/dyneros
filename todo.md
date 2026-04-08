@@ -128,8 +128,15 @@
 - [x] Documentazione credenziali superadmin
 
 ## Bug Fix — Pulsanti e Errori Build
-- [ ] Fix pulsanti "Accedi" e "Inizia Ora" nella Navbar (navigazione rotta)
-- [ ] Fix pulsanti CTA nella HeroSection
-- [ ] Rimuovere OAuth init dal server (log "[OAuth] Initialized")
-- [ ] Fix CSS @import order (Google Fonts deve essere prima di :root)
-- [ ] Rimuovere VITE_ANALYTICS_ENDPOINT e VITE_ANALYTICS_WEBSITE_ID da index.html
+- [x] Fix pulsanti "Accedi" e "Inizia Ora" nella Navbar (navigazione rotta)
+- [x] Fix pulsanti CTA nella HeroSection
+- [x] Rimuovere OAuth init dal server (log "[OAuth] Initialized")
+- [x] Fix CSS @import order (Google Fonts deve essere prima di :root)
+- [x] Rimuovere VITE_ANALYTICS_ENDPOINT e VITE_ANALYTICS_WEBSITE_ID da index.html
+
+## Fix MariaDB / Drizzle Migration
+- [ ] Fix drizzle.config.ts: dialect mysql, DATABASE_URL corretto
+- [ ] Eliminare vecchie migrazioni in /drizzle/migrations/
+- [ ] Rigenerare migrazioni da zero con drizzle-kit generate
+- [ ] Verificare schema con tutte le 19 colonne
+- [ ] ZIP con file direttamente alla radice (senza home/ubuntu)
