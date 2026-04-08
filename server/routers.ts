@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { users } from "../drizzle/schema";
 import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
 import {
   hashPassword, verifyPassword, generateToken, signSessionJWT,
   sessionCookieOptions
@@ -149,8 +148,15 @@ export const appRouter = router({
       }),
 
     logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      const secure = ctx.req.protocol === "https" ||
+        ctx.req.headers["x-forwarded-proto"] === "https";
+      ctx.res.clearCookie(COOKIE_NAME, {
+        httpOnly: true,
+        secure,
+        sameSite: secure ? "none" : "lax",
+        path: "/",
+        maxAge: -1,
+      });
       return { success: true } as const;
     }),
 

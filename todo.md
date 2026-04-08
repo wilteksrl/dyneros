@@ -126,3 +126,10 @@
 - [x] Aggiornare useAuth hook per leggere JWT nativo
 - [x] Creare superadmin iniziale via script seed (email + password configurabili)
 - [x] Documentazione credenziali superadmin
+
+## Bug Fix — Pulsanti e Errori Build
+- [ ] Fix pulsanti "Accedi" e "Inizia Ora" nella Navbar (navigazione rotta)
+- [ ] Fix pulsanti CTA nella HeroSection
+- [ ] Rimuovere OAuth init dal server (log "[OAuth] Initialized")
+- [ ] Fix CSS @import order (Google Fonts deve essere prima di :root)
+- [ ] Rimuovere VITE_ANALYTICS_ENDPOINT e VITE_ANALYTICS_WEBSITE_ID da index.html

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronRight } from "lucide-react";
 
@@ -127,9 +128,6 @@ export default function HeroSection() {
   const scrollToChain = () => {
     document.querySelector("#chain")?.scrollIntoView({ behavior: "smooth" });
   };
-  const scrollToContact = () => {
-    document.querySelector("#pricing")?.scrollIntoView({ behavior: "smooth" });
-  };
 
   return (
     <section
@@ -187,15 +185,16 @@ export default function HeroSection() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold px-8 h-12 text-base shadow-lg"
-              style={{ boxShadow: "0 0 30px oklch(68% 0.19 72 / 0.25)" }}
-              onClick={scrollToContact}
-            >
-              Inizia Ora
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+            <Link href="/register">
+              <Button
+                size="lg"
+                className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold px-8 h-12 text-base shadow-lg"
+                style={{ boxShadow: "0 0 30px oklch(68% 0.19 72 / 0.25)" }}
+              >
+                Inizia Ora
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="lg"

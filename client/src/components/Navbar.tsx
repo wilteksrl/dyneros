@@ -98,22 +98,23 @@ export default function Navbar() {
               </Link>
             ) : (
               <>
-                <a href="/login">
+                <Link href="/login">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-[oklch(65%_0.010_264)] hover:text-foreground"
                   >
-                  Accedi
-                </Button>
-                </a>
-                <Button
-                  size="sm"
-                  className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
-                  onClick={() => handleAnchor("#contact")}
-                >
-                  Inizia Ora
-                </Button>
+                    Accedi
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button
+                    size="sm"
+                    className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
+                  >
+                    Inizia Ora
+                  </Button>
+                </Link>
               </>
             )}
           </div>
@@ -151,17 +152,16 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <>
-                  <a href="/login" className="w-full">
+                  <Link href="/login" className="w-full">
                     <Button variant="outline" className="w-full border-border">
                       Accedi
                     </Button>
-                  </a>
-                  <Button
-                    className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
-                    onClick={() => handleAnchor("#contact")}
-                  >
-                    Inizia Ora
-                  </Button>
+                  </Link>
+                  <Link href="/register" className="w-full">
+                    <Button className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold">
+                      Inizia Ora
+                    </Button>
+                  </Link>
                 </>
               )}
             </div>
