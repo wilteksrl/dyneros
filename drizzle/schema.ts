@@ -1,22 +1,22 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  openId: varchar("openId", { length: 64 }).unique(),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  email: varchar("email", { length: 320 }).unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  company: varchar("company", { length: 255 }),
+  phone: varchar("phone", { length: 64 }),
+  loginMethod: varchar("loginMethod", { length: 64 }).default("email"),
+  role: mysqlEnum("role", ["user", "admin", "superadmin"]).default("user").notNull(),
+  status: mysqlEnum("status", ["active", "pending", "suspended"]).default("pending").notNull(),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  emailVerifyToken: varchar("emailVerifyToken", { length: 128 }),
+  emailVerifyExpiry: timestamp("emailVerifyExpiry"),
+  resetToken: varchar("resetToken", { length: 128 }),
+  resetTokenExpiry: timestamp("resetTokenExpiry"),
+  lastLoginAt: timestamp("lastLoginAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -24,5 +24,3 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-
-// TODO: Add your tables here

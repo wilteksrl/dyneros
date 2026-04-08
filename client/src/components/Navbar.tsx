@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 
 const navLinks = [
   { label: "Chain", href: "#chain" },
@@ -99,7 +98,7 @@ export default function Navbar() {
               </Link>
             ) : (
               <>
-                <a href={getLoginUrl()}>
+                <a href="/login">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -152,7 +151,7 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <>
-                  <a href={getLoginUrl()} className="w-full">
+                  <a href="/login" className="w-full">
                     <Button variant="outline" className="w-full border-border">
                       Accedi
                     </Button>

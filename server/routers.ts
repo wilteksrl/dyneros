@@ -1,22 +1,21 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { getDb } from "./db";
+import { users } from "../drizzle/schema";
+import { COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "./_core/cookies";
 import {
-  sendEmail,
-  verifySmtp,
-  templateWelcome,
-  templatePasswordReset,
-  templateEmailVerification,
-  templateNewTicket,
-  templateTicketUpdate,
-  templateContractExpiry,
-  templateInvoiceOverdue,
-  templateMilestoneAlert,
-  templateCriticalAlert,
+  hashPassword, verifyPassword, generateToken, signSessionJWT,
+  sessionCookieOptions
+} from "./auth-native";
+import {
+  sendEmail, verifySmtp,
+  templateWelcome, templatePasswordReset, templateEmailVerification,
+  templateNewTicket, templateTicketUpdate, templateContractExpiry,
+  templateInvoiceOverdue, templateMilestoneAlert, templateCriticalAlert,
 } from "./email";
-
 const GOLD_CHAIN = {
   chainId: 24589,
   name: "DYNEROS Chain",
@@ -86,11 +85,119 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+
+    register: publicProcedure
+      .input(z.object({
+        name: z.string().min(2),
+        email: z.string().email(),
+        password: z.string().min(8),
+        company: z.string().optional(),
+        phone: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        if (existing.length > 0) throw new Error("Email già registrata");
+        const passwordHash = await hashPassword(input.password);
+        const verifyToken = generateToken();
+        const verifyExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const [inserted] = await db.insert(users).values({
+          name: input.name,
+          email: input.email,
+          passwordHash,
+          company: input.company ?? null,
+          phone: input.phone ?? null,
+          loginMethod: "email",
+          role: "user",
+          status: "active",
+          emailVerified: false,
+          emailVerifyToken: verifyToken,
+          emailVerifyExpiry: verifyExpiry,
+          openId: `native-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          lastSignedIn: new Date(),
+        });
+        const newUser = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        if (!newUser[0]) throw new Error("Errore creazione utente");
+        const token = await signSessionJWT(newUser[0].id, newUser[0].role);
+        const secure = ctx.req.protocol === "https" || (ctx.req.headers["x-forwarded-proto"] === "https");
+        ctx.res.cookie(COOKIE_NAME, token, sessionCookieOptions(secure));
+        const verifyUrl = `${ctx.req.headers.origin ?? "https://dyneros.com"}/verify-email?token=${verifyToken}`;
+        try {
+          const tpl = templateEmailVerification({ name: input.name, verifyUrl });
+          await sendEmail({ to: input.email, subject: tpl.subject, html: tpl.html });
+        } catch {}
+        return { success: true, user: { id: newUser[0].id, name: newUser[0].name, email: newUser[0].email, role: newUser[0].role } };
+      }),
+
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const rows = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        const user = rows[0];
+        if (!user || !user.passwordHash) throw new Error("Credenziali non valide");
+        const valid = await verifyPassword(input.password, user.passwordHash);
+        if (!valid) throw new Error("Credenziali non valide");
+        if (user.status === "suspended") throw new Error("Account sospeso. Contatta il supporto.");
+        await db.update(users).set({ lastSignedIn: new Date(), lastLoginAt: new Date() }).where(eq(users.id, user.id));
+        const token = await signSessionJWT(user.id, user.role);
+        const secure = ctx.req.protocol === "https" || (ctx.req.headers["x-forwarded-proto"] === "https");
+        ctx.res.cookie(COOKIE_NAME, token, sessionCookieOptions(secure));
+        return { success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+      }),
+
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    forgotPassword: publicProcedure
+      .input(z.object({ email: z.string().email(), origin: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { success: true };
+        const rows = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        if (rows.length === 0) return { success: true };
+        const user = rows[0];
+        const token = generateToken();
+        const expiry = new Date(Date.now() + 60 * 60 * 1000);
+        await db.update(users).set({ resetToken: token, resetTokenExpiry: expiry }).where(eq(users.id, user.id));
+        const origin = input.origin ?? "https://dyneros.com";
+        const resetUrl = `${origin}/reset-password?token=${token}`;
+        try {
+          const tpl = templatePasswordReset({ name: user.name ?? "Utente", resetUrl, expiresIn: "1 ora" });
+          await sendEmail({ to: input.email, subject: tpl.subject, html: tpl.html });
+        } catch {}
+        return { success: true };
+      }),
+
+    resetPassword: publicProcedure
+      .input(z.object({ token: z.string(), password: z.string().min(8) }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const rows = await db.select().from(users).where(eq(users.resetToken, input.token)).limit(1);
+        const user = rows[0];
+        if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) throw new Error("Token non valido o scaduto");
+        const passwordHash = await hashPassword(input.password);
+        await db.update(users).set({ passwordHash, resetToken: null, resetTokenExpiry: null }).where(eq(users.id, user.id));
+        return { success: true };
+      }),
+
+    verifyEmail: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const rows = await db.select().from(users).where(eq(users.emailVerifyToken, input.token)).limit(1);
+        const user = rows[0];
+        if (!user) throw new Error("Token non valido");
+        await db.update(users).set({ emailVerified: true, emailVerifyToken: null, emailVerifyExpiry: null, status: "active" }).where(eq(users.id, user.id));
+        return { success: true };
+      }),
   }),
 
   network: router({
@@ -463,7 +570,7 @@ export const appRouter = router({
       }),
 
     smtpConfig: protectedProcedure.query(({ ctx }) => {
-      if (ctx.user.role !== "admin") return null;
+      if (ctx.user.role !== "admin" && ctx.user.role !== "superadmin") return null;
       return {
         host: process.env.SMTP_HOST ?? "",
         port: process.env.SMTP_PORT ?? "587",
@@ -471,6 +578,74 @@ export const appRouter = router({
         fromName: process.env.SMTP_FROM_NAME ?? "",
         fromEmail: process.env.SMTP_FROM_EMAIL ?? "",
         configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+      };
+    }),
+  }),
+
+  superadmin: router({
+    listUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        status: users.status,
+        company: users.company,
+        emailVerified: users.emailVerified,
+        createdAt: users.createdAt,
+        lastSignedIn: users.lastSignedIn,
+      }).from(users).orderBy(users.createdAt);
+    }),
+
+    updateUserRole: protectedProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(["user", "admin", "superadmin"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        if (input.userId === ctx.user.id) throw new Error("Non puoi modificare il tuo stesso ruolo");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
+        return { success: true };
+      }),
+
+    updateUserStatus: protectedProcedure
+      .input(z.object({ userId: z.number(), status: z.enum(["active", "suspended"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        if (input.userId === ctx.user.id) throw new Error("Non puoi sospendere te stesso");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(users).set({ status: input.status }).where(eq(users.id, input.userId));
+        return { success: true };
+      }),
+
+    deleteUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        if (input.userId === ctx.user.id) throw new Error("Non puoi eliminare te stesso");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(users).where(eq(users.id, input.userId));
+        return { success: true };
+      }),
+
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return { total: 0, active: 0, suspended: 0, admins: 0, newThisMonth: 0 };
+      const all = await db.select({ role: users.role, status: users.status, createdAt: users.createdAt }).from(users);
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        total: all.length,
+        active: all.filter(u => u.status === "active").length,
+        suspended: all.filter(u => u.status === "suspended").length,
+        admins: all.filter(u => u.role === "admin" || u.role === "superadmin").length,
+        newThisMonth: all.filter(u => u.createdAt >= monthStart).length,
       };
     }),
   }),

@@ -1,6 +1,5 @@
 import { Check, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
 
 const plans = [
   {
@@ -150,7 +149,7 @@ export default function PricingSection() {
 
               {/* CTA */}
               {plan.highlighted ? (
-                <a href={getLoginUrl()}>
+                <a href="/register">
                   <Button
                     className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold group"
                     size="lg"
