@@ -106,23 +106,23 @@
 - [x] Documentazione SMTP_CONFIG.md
 
 ## Sistema Auth Nativo (Sostituzione Manus OAuth)
-- [ ] Schema DB: aggiungere passwordHash, emailVerified, verifyToken, resetToken, resetTokenExpiry, status, lastLoginAt a users
-- [ ] Installare bcryptjs + @types/bcryptjs
-- [ ] server/auth-native.ts: helpers hashPassword, verifyPassword, generateToken, createSession JWT
-- [ ] tRPC: auth.register (email, password, nome, azienda)
-- [ ] tRPC: auth.login (email + password → JWT cookie)
-- [ ] tRPC: auth.logout (clear cookie)
-- [ ] tRPC: auth.me (legge cookie JWT)
-- [ ] tRPC: auth.forgotPassword (genera token, invia email reset)
-- [ ] tRPC: auth.resetPassword (token + nuova password)
-- [ ] tRPC: auth.verifyEmail (token verifica email)
-- [ ] Pagina Login: form email/password, link registrazione e forgot password
-- [ ] Pagina Register: form nome, azienda, email, password, conferma password
-- [ ] Pagina ForgotPassword: form email
-- [ ] Pagina ResetPassword: form nuova password con token URL
-- [ ] Pagina VerifyEmail: conferma verifica email
-- [ ] SuperAdmin panel: /admin - lista utenti, ruoli, ban/attiva, stats
-- [ ] Rimuovere tutti i riferimenti Manus OAuth da DashboardLayout, hooks, App.tsx
-- [ ] Aggiornare useAuth hook per leggere JWT nativo
-- [ ] Creare superadmin iniziale via script seed (email + password configurabili)
-- [ ] Documentazione credenziali superadmin
+- [x] Schema DB: aggiungere passwordHash, emailVerified, verifyToken, resetToken, resetTokenExpiry, status, lastLoginAt a users
+- [x] Installare bcryptjs + @types/bcryptjs
+- [x] server/auth-native.ts: helpers hashPassword, verifyPassword, generateToken, createSession JWT
+- [x] tRPC: auth.register (email, password, nome, azienda)
+- [x] tRPC: auth.login (email + password → JWT cookie)
+- [x] tRPC: auth.logout (clear cookie)
+- [x] tRPC: auth.me (legge cookie JWT)
+- [x] tRPC: auth.forgotPassword (genera token, invia email reset)
+- [x] tRPC: auth.resetPassword (token + nuova password)
+- [x] tRPC: auth.verifyEmail (token verifica email)
+- [x] Pagina Login: form email/password, link registrazione e forgot password
+- [x] Pagina Register: form nome, azienda, email, password, conferma password
+- [x] Pagina ForgotPassword: form email
+- [x] Pagina ResetPassword: form nuova password con token URL
+- [x] Pagina VerifyEmail: conferma verifica email (redirect automatico)
+- [x] SuperAdmin panel: /superadmin - lista utenti, ruoli, ban/attiva, stats
+- [x] Rimuovere tutti i riferimenti Manus OAuth da DashboardLayout, hooks, App.tsx
+- [x] Aggiornare useAuth hook per leggere JWT nativo
+- [x] Creare superadmin iniziale via script seed (email + password configurabili)
+- [x] Documentazione credenziali superadmin

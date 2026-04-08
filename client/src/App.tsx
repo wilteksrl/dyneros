@@ -34,6 +34,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SuperAdmin from "./pages/SuperAdmin";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function Router() {
   return (
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/superadmin" component={SuperAdmin} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/projects" component={DashProjects} />
       <Route path="/dashboard/tickets" component={DashTickets} />
