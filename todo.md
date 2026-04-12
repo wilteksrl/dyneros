@@ -225,11 +225,11 @@
 - [x] Export ZIP progetto completo per l'utente
 
 ## Traduzione Completa IT/EN — URGENTE
-- [ ] Ricostruire LanguageContext con dizionario completo IT+EN per TUTTE le pagine
-- [ ] Tradurre Navbar
-- [ ] Tradurre Home (tutte le sezioni landing)
-- [ ] Tradurre DashboardLayout sidebar + topbar
+- [x] Ricostruire LanguageContext con dizionario completo IT+EN per TUTTE le pagine
+- [x] Tradurre Navbar (desktop + mobile)
+- [x] Tradurre Home (HeroSection, TrustBar, ChainSection, PlatformSection, SolutionsSection, ServicesSection, DevelopersSection, CaseStudiesSection, PricingSection, SupportSection, CompanySection, Footer)
+- [x] Tradurre DashboardLayout sidebar + topbar (tutti i label con t())
 - [ ] Tradurre tutte le 16 pagine dashboard
-- [ ] Tradurre Login, Register, ForgotPassword, ResetPassword, VerifyEmail
-- [ ] TypeScript 0 errori
+- [x] Tradurre Login, Register, ForgotPassword, ResetPassword, VerifyEmail
+- [x] TypeScript 0 errori
 - [ ] ZIP pronto per public_html

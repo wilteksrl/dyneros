@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const BORDER = "oklch(20% 0.008 264)";
@@ -53,6 +54,7 @@ function SectionCard({ title, icon, children, collapsible = false }: {
 }
 
 export default function DashEmailSettings() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const { data: smtpConfig, isLoading: smtpLoading } = trpc.email.smtpConfig.useQuery();
@@ -121,9 +123,9 @@ export default function DashEmailSettings() {
                   <div className="space-y-2 mb-4">
                     {[
                       { label: "Host", value: smtpConfig.host },
-                      { label: "Porta", value: smtpConfig.port },
-                      { label: "Utente", value: smtpConfig.user },
-                      { label: "Mittente", value: `${smtpConfig.fromName} <${smtpConfig.fromEmail}>` },
+                      { label: t("email.port"), value: smtpConfig.port },
+                      { label: t("label.user"), value: smtpConfig.user },
+                      { label: t("email.sender"), value: `${smtpConfig.fromName} <${smtpConfig.fromEmail}>` },
                     ].map(row => (
                       <div key={row.label} className="flex items-center gap-3 p-2.5 rounded-lg"
                         style={{ background: "oklch(13% 0.006 264)", border: `1px solid ${BORDER}` }}>

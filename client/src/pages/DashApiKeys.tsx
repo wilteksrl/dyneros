@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Code2, Copy, Key, Loader2, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const GOLD_DIM = "oklch(68% 0.19 72 / 0.12)";
@@ -16,6 +17,7 @@ const PERM_COLORS: Record<string, string> = {
 const AVAILABLE_SCOPES = ["read", "write", "blockchain"];
 
 export default function DashApiKeys() {
+  const { t } = useLanguage();
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.dashboard.apiKeys.useQuery();
   const [showModal, setShowModal] = useState(false);
@@ -36,7 +38,7 @@ export default function DashApiKeys() {
   const revokeKey = trpc.dashboard.revokeApiKey.useMutation({
     onSuccess: () => {
       utils.dashboard.apiKeys.invalidate();
-      toast.success("Chiave revocata");
+      toast.success(t("apikey.revoked"));
     },
     onError: (e) => toast.error(e.message),
   });

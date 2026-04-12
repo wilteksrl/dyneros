@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Box, CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const GOLD_DIM = "oklch(68% 0.19 72 / 0.12)";
@@ -20,6 +21,7 @@ function CopyButton({ value }: { value: string }) {
 }
 
 export default function DashSmartContracts() {
+  const { t } = useLanguage();
   const { data, isLoading } = trpc.dashboard.smartContracts.useQuery();
 
   if (isLoading) return (
@@ -45,8 +47,8 @@ export default function DashSmartContracts() {
           {[
             { label: "Contratti Totali", value: data.contracts.length, accent: true },
             { label: "Verificati", value: data.contracts.filter(c => c.verified).length },
-            { label: "Attivi", value: data.contracts.filter(c => c.status === "active").length },
-            { label: "Rete", value: "DYNEROS Chain" },
+            { label: t("status.active"), value: data.contracts.filter(c => c.status === "active").length },
+            { label: t("label.network"), value: "DYNEROS Chain" },
           ].map(s => (
             <div key={s.label} className="rounded-xl border p-4"
               style={{ background: CARD_BG, borderColor: s.accent ? "oklch(68% 0.19 72 / 0.3)" : BORDER }}>

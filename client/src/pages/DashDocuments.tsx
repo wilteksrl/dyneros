@@ -2,6 +2,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { Download, ExternalLink, FileText, Loader2, Search } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const BORDER = "oklch(20% 0.008 264)";
@@ -9,9 +10,6 @@ const CARD_BG = "oklch(10% 0.006 264)";
 
 const STATUS_COLORS: Record<string, string> = {
   signed: "oklch(60% 0.18 145)", approved: GOLD, final: "oklch(55% 0.18 220)", draft: "oklch(55% 0.05 264)",
-};
-const STATUS_LABELS: Record<string, string> = {
-  signed: "Firmato", approved: "Approvato", final: "Definitivo", draft: "Bozza",
 };
 const TYPE_ICONS: Record<string, string> = {
   contract: "📄", sow: "📋", nda: "🔒", technical: "⚙️", report: "📊",
@@ -27,9 +25,15 @@ function Badge({ color, label }: { color: string; label: string }) {
 }
 
 export default function DashDocuments() {
+  const { t } = useLanguage();
   const { data: docs, isLoading } = trpc.dashboard.documents.useQuery();
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
+
+  const statusLabels: Record<string, string> = {
+    signed: t("contract.signed"), approved: t("contract.approved"),
+    final: t("contract.final"), draft: t("status.draft"),
+  };
 
   const categories = ["all", ...Array.from(new Set(docs?.map(d => d.category) ?? []))];
   const filtered = docs?.filter(d =>
@@ -42,8 +46,8 @@ export default function DashDocuments() {
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-semibold">Documenti</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{docs?.length ?? 0} documenti condivisi</p>
+            <h1 className="text-xl font-semibold">{t("dash.documents")}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{docs?.length ?? 0} {t("doc.count")}</p>
           </div>
         </div>
 
@@ -53,7 +57,7 @@ export default function DashDocuments() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Cerca documenti..."
+              placeholder={t("doc.search_placeholder")}
               className="w-full h-9 pl-9 pr-3 rounded-lg text-sm bg-[oklch(12%_0.006_264)] border focus:outline-none focus:border-[oklch(68%_0.19_72/0.5)]"
               style={{ borderColor: BORDER }}
             />
@@ -65,7 +69,7 @@ export default function DashDocuments() {
                 style={catFilter === c
                   ? { background: GOLD, color: "#000" }
                   : { background: "oklch(12% 0.006 264)", color: "oklch(60% 0.05 264)", border: `1px solid ${BORDER}` }}>
-                {c === "all" ? "Tutti" : c}
+                {c === "all" ? t("common.all") : c}
               </button>
             ))}
           </div>
@@ -88,14 +92,14 @@ export default function DashDocuments() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
                     <p className="text-sm font-medium truncate">{doc.name}</p>
-                    <Badge color={STATUS_COLORS[doc.status] || "oklch(55% 0.05 264)"} label={STATUS_LABELS[doc.status] || doc.status} />
+                    <Badge color={STATUS_COLORS[doc.status] || "oklch(55% 0.05 264)"} label={statusLabels[doc.status] || doc.status} />
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span>{doc.category}</span>
                     <span>·</span>
                     <span>{doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : "—"}</span>
                     <span>·</span>
-                    <span>{new Date(doc.createdAt).toLocaleDateString("it-IT")}</span>
+                    <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -111,7 +115,7 @@ export default function DashDocuments() {
             {filtered.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <FileText className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Nessun documento trovato</p>
+                <p className="text-sm">{t("doc.empty")}</p>
               </div>
             )}
           </div>

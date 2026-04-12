@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { CircuitBoard, Copy, ExternalLink, Loader2, Server, Zap } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const GOLD_DIM = "oklch(68% 0.19 72 / 0.12)";
@@ -36,6 +37,7 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
 }
 
 export default function DashBlockchain() {
+  const { t } = useLanguage();
   const { data, isLoading } = trpc.dashboard.blockchainInfo.useQuery();
   const { data: netStatus } = trpc.network.status.useQuery();
 
@@ -72,7 +74,7 @@ export default function DashBlockchain() {
 
         {netStatus && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Altezza Blocco" value={netStatus.blockHeight.toLocaleString("it-IT")} accent />
+            <StatCard label={t("blockchain.block_height")} value={netStatus.blockHeight.toLocaleString()} accent />
             <StatCard label="TPS" value={`${netStatus.tps} tx/s`} />
             <StatCard label="Uptime" value={`${netStatus.uptime}%`} />
             <StatCard label="Finalità" value="Immediata" />
@@ -87,7 +89,7 @@ export default function DashBlockchain() {
           <div className="space-y-3">
             {[
               { label: "RPC Mainnet", value: data.chain.rpcUrl, href: data.chain.rpcUrl },
-              { label: "Explorer", value: data.chain.explorerUrl, href: data.chain.explorerUrl },
+              { label: t("blockchain.explorer"), value: data.chain.explorerUrl, href: data.chain.explorerUrl },
               { label: "Wallet", value: data.chain.walletUrl, href: data.chain.walletUrl },
             ].map(ep => (
               <div key={ep.label} className="flex items-center gap-3 p-3 rounded-lg"
@@ -167,7 +169,7 @@ export default function DashBlockchain() {
 
         <div className="flex gap-3 flex-wrap">
           {[
-            { label: "Apri Explorer", href: data.chain.explorerUrl },
+            { label: t("blockchain.open_explorer"), href: data.chain.explorerUrl },
             { label: "Apri Wallet", href: data.chain.walletUrl },
             { label: "Connetti Mainnet RPC", href: data.chain.rpcUrl },
           ].map(btn => (

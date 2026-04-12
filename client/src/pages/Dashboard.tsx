@@ -1,6 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Activity,
   AlertTriangle,
@@ -66,10 +67,10 @@ function KpiCard({ icon: Icon, label, value, sub, accent }: {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, t }: { status: string; t: (k: string) => string }) {
   const labels: Record<string, string> = {
-    active: "Attivo", in_progress: "In Corso", open: "Aperto",
-    critical: "Critico", high: "Alta", medium: "Media", low: "Bassa",
+    active: t("status.active"), in_progress: t("status.in_progress"), open: t("status.open"),
+    critical: t("status.critical"), high: t("status.high"), medium: t("status.medium"), low: t("status.low"),
   };
   const colors: Record<string, string> = {
     active: "oklch(60% 0.18 145)", in_progress: GOLD, open: "oklch(55% 0.18 220)",
@@ -88,6 +89,7 @@ function StatusBadge({ status }: { status: string }) {
 export default function Dashboard() {
   const { data, isLoading } = trpc.dashboard.stats.useQuery();
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -102,15 +104,15 @@ export default function Dashboard() {
   if (!data) return null;
 
   const kpiItems = [
-    { icon: Activity, label: "Progetti Attivi", value: data.kpi.activeProjects, sub: "in lavorazione", accent: true },
-    { icon: Ticket, label: "Ticket Aperti", value: data.kpi.openTickets, sub: "da gestire" },
-    { icon: Receipt, label: "Fatture in Sospeso", value: data.kpi.pendingInvoices, sub: "da pagare" },
-    { icon: Server, label: "Ambienti Online", value: data.kpi.onlineEnvironments, sub: "prod + staging" },
-    { icon: Box, label: "Smart Contracts", value: data.kpi.deployedContracts, sub: "su DYNEROS Chain" },
-    { icon: Wallet, label: "Wallet Collegati", value: data.kpi.connectedWallets, sub: "self-custody" },
-    { icon: Zap, label: "Servizi Attivi", value: data.kpi.activeServices, sub: "in abbonamento" },
-    { icon: CheckCircle2, label: "Task Completati", value: data.kpi.completedTasksMonth, sub: "questo mese" },
-    { icon: FileText, label: "Documenti", value: data.kpi.documentsShared, sub: "nel portale" },
+    { icon: Activity, label: t("kpi.active_projects"), value: data.kpi.activeProjects, sub: t("kpi.active_projects_sub"), accent: true },
+    { icon: Ticket, label: t("kpi.open_tickets"), value: data.kpi.openTickets, sub: t("kpi.open_tickets_sub") },
+    { icon: Receipt, label: t("kpi.pending_invoices"), value: data.kpi.pendingInvoices, sub: t("kpi.pending_invoices_sub") },
+    { icon: Server, label: t("kpi.online_envs"), value: data.kpi.onlineEnvironments, sub: t("kpi.online_envs_sub") },
+    { icon: Box, label: t("kpi.smart_contracts"), value: data.kpi.deployedContracts, sub: t("kpi.smart_contracts_sub") },
+    { icon: Wallet, label: t("kpi.wallets"), value: data.kpi.connectedWallets, sub: t("kpi.wallets_sub") },
+    { icon: Zap, label: t("kpi.active_services"), value: data.kpi.activeServices, sub: t("kpi.active_services_sub") },
+    { icon: CheckCircle2, label: t("kpi.completed_tasks"), value: data.kpi.completedTasksMonth, sub: t("kpi.completed_tasks_sub") },
+    { icon: FileText, label: t("kpi.documents"), value: data.kpi.documentsShared, sub: t("kpi.documents_sub") },
   ];
 
   return (
@@ -129,15 +131,15 @@ export default function Dashboard() {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-lg font-semibold">Workspace Operativo</h1>
-                  <StatusBadge status={data.accountStatus} />
+                  <h1 className="text-lg font-semibold">{t("dash.workspace")}</h1>
+                  <StatusBadge status={data.accountStatus} t={t} />
                 </div>
                 <div className="flex items-center gap-3 mt-1 flex-wrap">
                   <span className="text-xs font-mono text-muted-foreground">{data.customerId}</span>
                   <span className="text-xs text-muted-foreground">·</span>
                   <span className="text-xs font-semibold" style={{ color: GOLD }}>{data.tier}</span>
                   <span className="text-xs text-muted-foreground">·</span>
-                  <span className="text-xs text-muted-foreground">Ultimo accesso: oggi</span>
+                  <span className="text-xs text-muted-foreground">{t("dash.last_access")}</span>
                 </div>
               </div>
             </div>
@@ -167,14 +169,14 @@ export default function Dashboard() {
                   className="flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg border transition-colors hover:bg-[oklch(15%_0.008_264)]"
                   style={{ borderColor: BORDER }}>
                   <Plus className="h-3 w-3" />
-                  Nuova Richiesta
+                  {t("dash.new_request")}
                 </button>
                 <button
                   onClick={() => setLocation("/dashboard/team")}
                   className="flex items-center gap-1.5 text-xs font-medium px-3 h-8 rounded-lg transition-colors"
                   style={{ background: GOLD, color: "#000" }}>
                   <Mail className="h-3 w-3" />
-                  Contatta Dyneros
+                  {t("dash.contact_dyneros")}
                 </button>
               </div>
             </div>
@@ -190,9 +192,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 rounded-xl border p-5" style={{ background: CARD_BG, borderColor: BORDER }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold">Attività Recenti</h2>
+              <h2 className="text-sm font-semibold">{t("dash.recent_activity")}</h2>
               <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
-                Vedi tutto <ChevronRight className="h-3 w-3" />
+                {t("dash.view_all")} <ChevronRight className="h-3 w-3" />
               </button>
             </div>
             <div className="space-y-3">
@@ -220,7 +222,7 @@ export default function Dashboard() {
                 style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.2)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="h-4 w-4" style={{ color: GOLD }} />
-                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: GOLD }}>Prossima Milestone</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: GOLD }}>{t("dash.next_milestone")}</p>
                 </div>
                 <p className="text-sm font-semibold">{data.nextMilestone.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">{data.nextMilestone.project}</p>
@@ -229,7 +231,7 @@ export default function Dashboard() {
                   <span className="text-xs text-muted-foreground">{data.nextMilestone.date}</span>
                   <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full"
                     style={{ background: GOLD_DIM, color: GOLD }}>
-                    {data.nextMilestone.daysLeft}gg
+                    {data.nextMilestone.daysLeft}{t("dash.days_abbr")}
                   </span>
                 </div>
               </div>
@@ -239,16 +241,16 @@ export default function Dashboard() {
               <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle className="h-4 w-4 text-orange-400" />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">Ticket Prioritari</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-orange-400">{t("dash.priority_tickets")}</p>
                 </div>
                 <div className="space-y-2.5">
-                  {data.criticalTickets.map((t) => (
-                    <div key={t.id} className="flex items-start gap-2">
+                  {data.criticalTickets.map((ticket) => (
+                    <div key={ticket.id} className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{t.subject}</p>
+                        <p className="text-xs font-medium truncate">{ticket.subject}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-mono text-muted-foreground">{t.id}</span>
-                          <StatusBadge status={t.priority} />
+                          <span className="text-[10px] font-mono text-muted-foreground">{ticket.id}</span>
+                          <StatusBadge status={ticket.priority} t={t} />
                         </div>
                       </div>
                       <button
@@ -265,16 +267,16 @@ export default function Dashboard() {
             <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accesso Rapido</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("dash.quick_access")}</p>
               </div>
               <div className="grid grid-cols-2 gap-1.5">
                 {[
-                  { label: "Progetti", icon: Activity, path: "/dashboard/projects" },
-                  { label: "Ticket", icon: Ticket, path: "/dashboard/tickets" },
-                  { label: "Fatture", icon: Receipt, path: "/dashboard/invoices" },
-                  { label: "Blockchain", icon: CircuitBoard, path: "/dashboard/blockchain" },
-                  { label: "Wallet", icon: Wallet, path: "/dashboard/wallet" },
-                  { label: "Documenti", icon: FolderOpen, path: "/dashboard/documents" },
+                  { label: t("dash.projects"), icon: Activity, path: "/dashboard/projects" },
+                  { label: t("dash.tickets"), icon: Ticket, path: "/dashboard/tickets" },
+                  { label: t("dash.invoices"), icon: Receipt, path: "/dashboard/invoices" },
+                  { label: t("dash.blockchain"), icon: CircuitBoard, path: "/dashboard/blockchain" },
+                  { label: t("dash.wallet"), icon: Wallet, path: "/dashboard/wallet" },
+                  { label: t("dash.documents"), icon: FolderOpen, path: "/dashboard/documents" },
                 ].map((item) => (
                   <button
                     key={item.label}

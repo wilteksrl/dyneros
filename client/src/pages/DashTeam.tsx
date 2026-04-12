@@ -1,6 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Mail, Users } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const GOLD_DIM = "oklch(68% 0.19 72 / 0.12)";
@@ -10,12 +11,20 @@ const CARD_BG = "oklch(10% 0.006 264)";
 const STATUS_COLORS: Record<string, string> = {
   available: "oklch(60% 0.18 145)", busy: GOLD, away: "oklch(55% 0.05 264)",
 };
-const STATUS_LABELS: Record<string, string> = {
-  available: "Disponibile", busy: "Occupato", away: "Assente",
-};
 
 export default function DashTeam() {
+  const { t } = useLanguage();
   const { data, isLoading } = trpc.dashboard.teamContacts.useQuery();
+
+  const statusLabels: Record<string, string> = {
+    available: t("status.available"), busy: t("status.busy"), away: t("status.away"),
+  };
+
+  const contacts = [
+    { label: t("team.tech_support"), email: "support@dyneros.com" },
+    { label: t("team.sales"), email: "sales@dyneros.com" },
+    { label: t("team.billing_contact"), email: "billing@dyneros.com" },
+  ];
 
   if (isLoading) return (
     <DashboardLayout>
@@ -29,8 +38,8 @@ export default function DashTeam() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
-          <h1 className="text-xl font-semibold">Team / Referenti</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Il tuo team dedicato Dyneros</p>
+          <h1 className="text-xl font-semibold">{t("dash.team")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("team.dedicated_desc")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -51,7 +60,7 @@ export default function DashTeam() {
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
                         style={{ color: sc, background: `${sc}12` }}>
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: sc }} />
-                        {STATUS_LABELS[member.status] || member.status}
+                        {statusLabels[member.status] || member.status}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">{member.role}</p>
@@ -73,19 +82,21 @@ export default function DashTeam() {
               </div>
             );
           })}
+          {(!data?.team || data.team.length === 0) && (
+            <div className="col-span-2 text-center py-16 text-muted-foreground">
+              <Users className="h-8 w-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">{t("team.empty")}</p>
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border p-5" style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.15)" }}>
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-4 w-4" style={{ color: GOLD }} />
-            <h2 className="text-sm font-semibold">Contatti Generali Dyneros</h2>
+            <h2 className="text-sm font-semibold">{t("team.general_contacts")}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { label: "Supporto Tecnico", email: "support@dyneros.com" },
-              { label: "Commerciale", email: "sales@dyneros.com" },
-              { label: "Fatturazione", email: "billing@dyneros.com" },
-            ].map(c => (
+            {contacts.map(c => (
               <div key={c.email} className="p-3 rounded-lg" style={{ background: "oklch(13% 0.006 264)", border: `1px solid ${BORDER}` }}>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{c.label}</p>
                 <a href={`mailto:${c.email}`} className="text-sm font-medium transition-colors hover:text-foreground" style={{ color: GOLD }}>

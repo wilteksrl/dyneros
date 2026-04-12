@@ -1,6 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { CheckCircle2, ExternalLink, Globe, Loader2, Server } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const BORDER = "oklch(20% 0.008 264)";
@@ -21,6 +22,7 @@ function Badge({ color, label }: { color: string; label: string }) {
 }
 
 export default function DashDomains() {
+  const { t } = useLanguage();
   const { data, isLoading } = trpc.dashboard.domains.useQuery();
 
   if (isLoading) return (
@@ -36,8 +38,8 @@ export default function DashDomains() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
-          <h1 className="text-xl font-semibold">Domini / Hosting</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{data.domains.length} ambienti gestiti da Dyneros</p>
+          <h1 className="text-xl font-semibold">{t("dash.domains")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{data.domains.length} {t("domain.managed_by_dyneros")}</p>
         </div>
 
         <div className="space-y-3">
@@ -56,7 +58,7 @@ export default function DashDomains() {
                       {domain.ssl === "valid" && (
                         <span className="flex items-center gap-1 text-[10px] text-green-400">
                           <CheckCircle2 className="h-3 w-3" />
-                          SSL Valido
+                          {t("domain.ssl_valid")}
                         </span>
                       )}
                     </div>
@@ -65,7 +67,7 @@ export default function DashDomains() {
                       <span>·</span>
                       <span>Uptime: {domain.uptime}%</span>
                       <span>·</span>
-                      <span>Ultimo deploy: {domain.lastDeploy}</span>
+                      <span>{t("domain.last_deploy")}: {domain.lastDeploy}</span>
                     </div>
                   </div>
                 </div>
@@ -81,10 +83,10 @@ export default function DashDomains() {
         <div className="rounded-xl border p-5" style={{ background: CARD_BG, borderColor: BORDER }}>
           <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
             <Server className="h-4 w-4" style={{ color: GOLD }} />
-            Storico Deploy
+            {t("domain.deploy_history")}
           </h2>
           {data.deployHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nessun deploy registrato</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{t("domain.no_deploys")}</p>
           ) : (
             <div className="space-y-2">
               {(data.deployHistory as Array<{ id: string; domain: string; version: string; status: string; time: string; duration: string }>).map(dep => (
@@ -96,7 +98,7 @@ export default function DashDomains() {
                       <p className="text-sm font-mono">{dep.domain}</p>
                       <span className="text-xs text-muted-foreground">{dep.version}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{new Date(dep.time).toLocaleString("it-IT")} · Durata: {dep.duration}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(dep.time).toLocaleString()} · {t("label.duration")}: {dep.duration}</p>
                   </div>
                   <span className="text-[10px] font-mono text-muted-foreground shrink-0">{dep.id}</span>
                 </div>

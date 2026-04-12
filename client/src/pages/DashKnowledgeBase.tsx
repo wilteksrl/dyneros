@@ -2,6 +2,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { BookOpen, ExternalLink, Loader2, Search } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const BORDER = "oklch(20% 0.008 264)";
@@ -13,6 +14,7 @@ const CAT_COLORS: Record<string, string> = {
 };
 
 export default function DashKnowledgeBase() {
+  const { t } = useLanguage();
   const { data, isLoading } = trpc.dashboard.knowledgeBase.useQuery();
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
@@ -37,7 +39,7 @@ export default function DashKnowledgeBase() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Cerca articoli..."
+              placeholder={t("kb.search_placeholder")}
               className="w-full h-9 pl-9 pr-3 rounded-lg text-sm bg-[oklch(12%_0.006_264)] border focus:outline-none focus:border-[oklch(68%_0.19_72/0.5)]"
               style={{ borderColor: BORDER }}
             />
@@ -49,7 +51,7 @@ export default function DashKnowledgeBase() {
                 style={catFilter === c
                   ? { background: GOLD, color: "#000" }
                   : { background: "oklch(12% 0.006 264)", color: "oklch(60% 0.05 264)", border: `1px solid ${BORDER}` }}>
-                {c === "all" ? "Tutti" : c}
+                {c === "all" ? t("common.all") : c}
               </button>
             ))}
           </div>
