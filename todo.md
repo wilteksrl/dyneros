@@ -215,9 +215,11 @@
 - [x] TypeScript check 0 errori (30 test totali passati)
 
 ## Bug Fix — Selettore Lingua (Priorità Alta)
-- [ ] Fix LanguageContext: il cambio lingua deve aggiornare l'UI immediatamente
-- [ ] Aggiungere selettore lingua nel DashboardLayout topbar (visibile in tutte le pagine dashboard)
-- [ ] Aggiungere selettore lingua in SuperAdmin topbar
-- [ ] Aggiungere selettore lingua nelle pagine auth (Login, Register, ForgotPassword, ResetPassword)
-- [ ] Verificare che Navbar abbia selettore lingua funzionante
-- [ ] Export ZIP progetto completo per l'utente
+- [x] Fix LanguageContext: il cambio lingua aggiorna l'UI immediatamente (localStorage + React state)
+- [x] Aggiungere selettore lingua nel DashboardLayout topbar (visibile in tutte le 16 pagine dashboard)
+- [x] Aggiungere selettore lingua in SuperAdmin topbar
+- [x] Aggiungere selettore lingua nelle pagine auth (Login, Register)
+- [x] Verificare che Navbar abbia selettore lingua funzionante (desktop + mobile)
+- [x] Aggiungere selettore lingua in ForgotPassword.tsx
+- [x] Aggiungere selettore lingua in ResetPassword.tsx
+- [x] Export ZIP progetto completo per l'utente

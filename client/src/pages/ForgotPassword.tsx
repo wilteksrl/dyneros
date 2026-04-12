@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, CheckCircle, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle, Globe, Loader2, Mail } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 
@@ -8,6 +9,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const { language, setLanguage } = useLanguage();
 
   const forgot = trpc.auth.forgotPassword.useMutation({
     onSuccess: () => setSent(true),
@@ -45,16 +47,40 @@ export default function ForgotPassword() {
               <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "oklch(68% 0.19 72 / 0.12)" }}>
                 <CheckCircle className="h-7 w-7" style={{ color: GOLD }} />
               </div>
-              <h2 className="text-xl font-bold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Email inviata!</h2>
+              <h2 className="text-xl font-bold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {language === "it" ? "Email inviata!" : "Email sent!"}
+              </h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Se l'indirizzo <strong>{email}</strong> è registrato, riceverai un link per reimpostare la password entro pochi minuti.
+                {language === "it"
+                  ? <>Se l'indirizzo <strong>{email}</strong> è registrato, riceverai un link per reimpostare la password entro pochi minuti.</>
+                  : <>If <strong>{email}</strong> is registered, you will receive a reset link within a few minutes.</>
+                }
               </p>
-              <a href="/login" className="text-sm font-medium hover:underline" style={{ color: GOLD }}>← Torna al login</a>
+              <a href="/login" className="text-sm font-medium hover:underline" style={{ color: GOLD }}>
+                ← {language === "it" ? "Torna al login" : "Back to login"}
+              </a>
             </div>
           ) : (
             <>
-              <h1 className="text-xl font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Password dimenticata?</h1>
-              <p className="text-sm text-muted-foreground mb-6">Inserisci la tua email e ti invieremo un link per reimpostare la password.</p>
+              <div className="flex items-start justify-between mb-1">
+                <h1 className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {language === "it" ? "Password dimenticata?" : "Forgot password?"}
+                </h1>
+                <button
+                  onClick={() => setLanguage(language === "it" ? "en" : "it")}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded-md transition-all hover:border-[oklch(68%_0.19_72)] text-muted-foreground hover:text-foreground"
+                  style={{ borderColor: "oklch(22% 0.008 264)" }}
+                >
+                  <Globe className="w-3 h-3" />
+                  {language.toUpperCase()}
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                {language === "it"
+                  ? "Inserisci la tua email e ti invieremo un link per reimpostare la password."
+                  : "Enter your email and we will send you a password reset link."
+                }
+              </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -78,13 +104,13 @@ export default function ForgotPassword() {
                   className="w-full h-11 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                   style={{ background: GOLD, color: "#000" }}>
                   {forgot.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Invia link di reset
+                  {language === "it" ? "Invia link di reset" : "Send reset link"}
                 </button>
               </form>
 
               <p className="text-center text-sm text-muted-foreground mt-6">
                 <a href="/login" className="inline-flex items-center gap-1 hover:underline" style={{ color: GOLD }}>
-                  <ArrowLeft className="h-3 w-3" /> Torna al login
+                  <ArrowLeft className="h-3 w-3" /> {language === "it" ? "Torna al login" : "Back to login"}
                 </a>
               </p>
             </>
