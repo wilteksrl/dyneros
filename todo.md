@@ -223,3 +223,13 @@
 - [x] Aggiungere selettore lingua in ForgotPassword.tsx
 - [x] Aggiungere selettore lingua in ResetPassword.tsx
 - [x] Export ZIP progetto completo per l'utente
+
+## Traduzione Completa IT/EN — URGENTE
+- [ ] Ricostruire LanguageContext con dizionario completo IT+EN per TUTTE le pagine
+- [ ] Tradurre Navbar
+- [ ] Tradurre Home (tutte le sezioni landing)
+- [ ] Tradurre DashboardLayout sidebar + topbar
+- [ ] Tradurre tutte le 16 pagine dashboard
+- [ ] Tradurre Login, Register, ForgotPassword, ResetPassword, VerifyEmail
+- [ ] TypeScript 0 errori
+- [ ] ZIP pronto per public_html

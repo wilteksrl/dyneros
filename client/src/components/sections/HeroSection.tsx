@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function AnimatedGrid() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,6 +126,7 @@ function AnimatedGrid() {
 }
 
 export default function HeroSection() {
+  const { t } = useLanguage();
   const scrollToChain = () => {
     document.querySelector("#chain")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -161,7 +163,7 @@ export default function HeroSection() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[oklch(68%_0.19_72/0.3)] bg-[oklch(68%_0.19_72/0.06)] mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-[oklch(68%_0.19_72)] animate-pulse" />
             <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-              Dyneros Chain — Attiva su Mainnet
+              {t("hero.badge")}
             </span>
           </div>
 
@@ -170,17 +172,16 @@ export default function HeroSection() {
             className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.05]"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Infrastruttura Digitale
+            {t("hero.headline1")}
             <br />
-            <span className="text-gold-gradient">per la Prossima Generazione</span>
+            <span className="text-gold-gradient">{t("hero.headline2")}</span>
             <br />
-            di Imprese
+            {t("hero.headline3")}
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Dyneros costruisce sistemi scalabili e sicuri per le imprese moderne —
-            on-chain e oltre.
+            {t("hero.sub")}
           </p>
 
           {/* CTAs */}
@@ -191,7 +192,7 @@ export default function HeroSection() {
                 className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold px-8 h-12 text-base shadow-lg"
                 style={{ boxShadow: "0 0 30px oklch(68% 0.19 72 / 0.25)" }}
               >
-                Inizia Ora
+                {t("hero.cta.start")}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
@@ -201,7 +202,7 @@ export default function HeroSection() {
               className="text-muted-foreground hover:text-foreground border border-[oklch(22%_0.008_264)] hover:border-[oklch(68%_0.19_72/0.4)] h-12 px-8 text-base"
               onClick={scrollToChain}
             >
-              Esplora Dyneros Chain
+              {t("hero.cta.explore")}
               <ChevronRight className="ml-1 w-4 h-4" />
             </Button>
           </div>
@@ -209,9 +210,9 @@ export default function HeroSection() {
           {/* Stats row */}
           <div className="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto border-t border-[oklch(22%_0.008_264)] pt-10">
             {[
-              { value: "99.9%", label: "Uptime di Rete" },
-              { value: "2.1M+", label: "Transazioni Elaborate" },
-              { value: "15+", label: "Clienti Enterprise" },
+              { value: "99.9%", label: t("hero.stat1.label") },
+              { value: "2.1M+", label: t("hero.stat2.label") },
+              { value: "15+", label: t("hero.stat3.label") },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div

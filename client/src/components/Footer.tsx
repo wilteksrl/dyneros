@@ -1,42 +1,56 @@
 import { Link } from "wouter";
-import { useState } from "react";
-
-const links = {
-  Prodotto: [
-    { label: "Dyneros Chain", href: "#chain" },
-    { label: "Piattaforma", href: "#platform" },
-    { label: "Sviluppatori", href: "#developers" },
-    { label: "Prezzi", href: "#pricing" },
-  ],
-  Soluzioni: [
-    { label: "Manifattura", href: "#solutions" },
-    { label: "Logistica", href: "#solutions" },
-    { label: "Finanza", href: "#solutions" },
-    { label: "Gaming", href: "#solutions" },
-  ],
-  Rete: [
-    { label: "Mainnet", href: "https://mainnet.dyneros.com", external: true },
-    { label: "Explorer", href: "https://explorer.dyneros.com", external: true },
-    { label: "Wallet", href: "https://wallet.dyneros.com", external: true },
-    { label: "Stato Rete", href: "https://mainnet.dyneros.com", external: true },
-  ],
-  Azienda: [
-    { label: "Chi Siamo", href: "#company" },
-    { label: "Servizi", href: "#services" },
-    { label: "Supporto", href: "#support" },
-    { label: "Contatti", href: "#company" },
-  ],
-};
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const legalLinks = [
-  { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Cookie Policy", href: "/cookie-policy" },
-  { label: "Termini e Condizioni", href: "/terms" },
-  { label: "Disclaimer Legale", href: "/disclaimer" },
-  { label: "AML/KYC", href: "/aml-kyc" },
+  { labelKey: "Privacy Policy", href: "/privacy-policy" },
+  { labelKey: "Cookie Policy", href: "/cookie-policy" },
+  { labelKey: "footer.legal.terms", href: "/terms" },
+  { labelKey: "footer.legal.disclaimer", href: "/disclaimer" },
+  { labelKey: "AML/KYC", href: "/aml-kyc" },
 ];
 
 export default function Footer() {
+  const { t } = useLanguage();
+
+  const links = [
+    {
+      colKey: "footer.col.product",
+      items: [
+        { labelKey: "footer.link.chain", href: "#chain" },
+        { labelKey: "footer.link.platform", href: "#platform" },
+        { labelKey: "footer.link.developers", href: "#developers" },
+        { labelKey: "footer.link.pricing", href: "#pricing" },
+      ],
+    },
+    {
+      colKey: "footer.col.solutions",
+      items: [
+        { labelKey: "footer.link.manufacturing", href: "#solutions" },
+        { labelKey: "footer.link.logistics", href: "#solutions" },
+        { labelKey: "footer.link.finance", href: "#solutions" },
+        { labelKey: "footer.link.gaming", href: "#solutions" },
+      ],
+    },
+    {
+      colKey: "footer.col.network",
+      items: [
+        { labelKey: "Mainnet", href: "https://mainnet.dyneros.com", external: true },
+        { labelKey: "Explorer", href: "https://explorer.dyneros.com", external: true },
+        { labelKey: "Wallet", href: "https://wallet.dyneros.com", external: true },
+        { labelKey: "footer.link.support", href: "https://mainnet.dyneros.com", external: true },
+      ],
+    },
+    {
+      colKey: "footer.col.company",
+      items: [
+        { labelKey: "footer.link.about", href: "#company" },
+        { labelKey: "footer.link.services", href: "#services" },
+        { labelKey: "footer.link.support", href: "#support" },
+        { labelKey: "footer.link.contact", href: "#company" },
+      ],
+    },
+  ];
+
   const scrollTo = (href: string) => {
     if (href.startsWith("http") || href.startsWith("/")) return;
     const el = document.querySelector(href);
@@ -71,18 +85,18 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Infrastruttura digitale per la prossima generazione di imprese.
+              {t("footer.tagline")}
             </p>
           </div>
 
-          {Object.entries(links).map(([category, items]) => (
-            <div key={category}>
+          {links.map((col) => (
+            <div key={col.colKey}>
               <p className="text-xs font-semibold text-foreground uppercase tracking-widest mb-4">
-                {category}
+                {t(col.colKey)}
               </p>
               <ul className="space-y-2.5">
-                {items.map((item) => (
-                  <li key={item.label}>
+                {col.items.map((item) => (
+                  <li key={item.labelKey + item.href}>
                     {"external" in item && item.external ? (
                       <a
                         href={item.href}
@@ -90,14 +104,14 @@ export default function Footer() {
                         rel="noopener noreferrer"
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        {item.label}
+                        {t(item.labelKey)}
                       </a>
                     ) : (
                       <button
                         onClick={() => scrollTo(item.href)}
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        {item.label}
+                        {t(item.labelKey)}
                       </button>
                     )}
                   </li>
@@ -109,23 +123,23 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-[oklch(22%_0.008_264)] mb-6">
           <p className="text-xs font-semibold text-foreground uppercase tracking-widest mb-3">
-            Legale
+            {t("footer.legal.section")}
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             {legalLinks.map((item) => (
               <Link
-                key={item.label}
+                key={item.labelKey + item.href}
                 href={item.href}
                 className="text-xs text-muted-foreground hover:text-[oklch(68%_0.19_72)] transition-colors"
               >
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
             <button
               onClick={resetCookies}
               className="text-xs text-muted-foreground hover:text-[oklch(68%_0.19_72)] transition-colors"
             >
-              Gestisci Cookie
+              {t("footer.legal.manage_cookies")}
             </button>
           </div>
         </div>
@@ -133,15 +147,15 @@ export default function Footer() {
         <div className="pt-6 border-t border-[oklch(22%_0.008_264)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Dyneros Ltd. Tutti i diritti riservati.
+              © {new Date().getFullYear()} {t("footer.copyright")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Dyneros è una piattaforma tecnologica. Il token DYN è un utility token. Non viene prestata consulenza finanziaria.
+              {t("footer.disclaimer")}
             </p>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)] animate-pulse" />
-            <span className="text-xs text-muted-foreground">Tutti i sistemi operativi</span>
+            <span className="text-xs text-muted-foreground">{t("footer.systems_ok")}</span>
           </div>
         </div>
       </div>

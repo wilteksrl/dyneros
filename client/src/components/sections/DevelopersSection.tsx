@@ -1,44 +1,28 @@
 import { Network, FileCode2, Plug, ArrowRight, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-const accessPoints = [
-  {
-    icon: Network,
-    title: "Accesso alla Rete",
-    description:
-      "Connetti le tue applicazioni direttamente alla mainnet Dyneros Chain o a un'istanza privata dedicata.",
-    tag: "RPC / WebSocket",
-  },
-  {
-    icon: FileCode2,
-    title: "Deploy di Smart Contract",
-    description:
-      "Distribuisci e gestisci smart contract su Dyneros Chain usando gli strumenti di sviluppo che già conosci.",
-    tag: "EVM Compatibile",
-  },
-  {
-    icon: Plug,
-    title: "Integrazione API",
-    description:
-      "API RESTful e GraphQL per leggere lo stato della chain, inviare transazioni e monitorare gli eventi.",
-    tag: "REST / GraphQL",
-  },
+const accessPointKeys = [
+  { icon: Network, prefix: "dev.ap1", tag: "RPC / WebSocket" },
+  { icon: FileCode2, prefix: "dev.ap2", tag: "EVM Compatible" },
+  { icon: Plug, prefix: "dev.ap3", tag: "REST / GraphQL" },
 ];
 
-const codeSnippet = `// Connetti a Dyneros Chain
+const codeSnippet = `// Connect to Dyneros Chain
 const provider = new DynerosProvider({
   network: "mainnet",
   endpoint: "https://mainnet.dyneros.com"
 });
 
-// Deploy di un contratto
+// Deploy a contract
 const contract = await provider
   .deploy(abi, bytecode)
   .send({ from: account });
 
-console.log("Deployato a:", contract.address);`;
+console.log("Deployed at:", contract.address);`;
 
 export default function DevelopersSection() {
+  const { t } = useLanguage();
   return (
     <section id="developers" className="section-padding bg-background">
       <div className="container">
@@ -47,24 +31,23 @@ export default function DevelopersSection() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[oklch(68%_0.19_72/0.25)] bg-[oklch(68%_0.19_72/0.05)] mb-6">
               <span className="text-xs font-medium text-[oklch(68%_0.19_72)] tracking-widest uppercase">
-                Per i Costruttori
+                {t("dev.badge")}
               </span>
             </div>
             <h2
               className="text-4xl md:text-5xl font-bold text-foreground mb-6"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
-              Costruisci su Dyneros
+              {t("dev.headline")}
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-10">
-              Accedi all'infrastruttura Dyneros Chain attraverso interfacce pulite e ben documentate.
-              Nessuna complessità interna esposta — solo gli strumenti di cui hai bisogno per costruire.
+              {t("dev.sub")}
             </p>
 
             <div className="space-y-4 mb-10">
-              {accessPoints.map((point) => (
+              {accessPointKeys.map((point) => (
                 <div
-                  key={point.title}
+                  key={point.prefix}
                   className="flex items-start gap-4 p-4 rounded-xl border border-[oklch(22%_0.008_264)] bg-[oklch(12%_0.006_264)] card-hover group"
                 >
                   <div className="w-9 h-9 rounded-lg bg-[oklch(68%_0.19_72/0.1)] flex items-center justify-center flex-shrink-0 group-hover:bg-[oklch(68%_0.19_72/0.15)] transition-colors">
@@ -73,14 +56,14 @@ export default function DevelopersSection() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-foreground text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                        {point.title}
+                        {t(`${point.prefix}.title`)}
                       </h3>
                       <span className="text-[10px] font-mono text-muted-foreground bg-[oklch(18%_0.008_264)] px-2 py-0.5 rounded-full">
                         {point.tag}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {point.description}
+                      {t(`${point.prefix}.desc`)}
                     </p>
                   </div>
                 </div>
@@ -91,7 +74,7 @@ export default function DevelopersSection() {
               className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold group"
               size="lg"
             >
-              Inizia a Costruire
+              {t("dev.cta")}
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>

@@ -57,46 +57,46 @@ const GOLD = "oklch(68% 0.19 72)";
 
 const menuGroups = [
   {
-    label: "Principale",
+    labelKey: "dash.group.main",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-      { icon: Activity, label: "Progetti", path: "/dashboard/projects" },
-      { icon: Ticket, label: "Ticket & Supporto", path: "/dashboard/tickets" },
-      { icon: FolderOpen, label: "Documenti", path: "/dashboard/documents" },
+      { icon: LayoutDashboard, labelKey: "dash.overview", path: "/dashboard" },
+      { icon: Activity, labelKey: "dash.projects", path: "/dashboard/projects" },
+      { icon: Ticket, labelKey: "dash.nav.tickets", path: "/dashboard/tickets" },
+      { icon: FolderOpen, labelKey: "dash.documents", path: "/dashboard/documents" },
     ],
   },
   {
-    label: "Commerciale",
+    labelKey: "dash.group.commercial",
     items: [
-      { icon: FileText, label: "Preventivi & Contratti", path: "/dashboard/contracts" },
-      { icon: Receipt, label: "Fatture & Pagamenti", path: "/dashboard/invoices" },
+      { icon: FileText, labelKey: "dash.nav.contracts", path: "/dashboard/contracts" },
+      { icon: Receipt, labelKey: "dash.nav.invoices", path: "/dashboard/invoices" },
     ],
   },
   {
-    label: "Blockchain",
+    labelKey: "dash.group.blockchain",
     items: [
-      { icon: CircuitBoard, label: "Blockchain / Web3", path: "/dashboard/blockchain" },
-      { icon: Wallet, label: "Wallet & Assets", path: "/dashboard/wallet" },
-      { icon: Box, label: "Smart Contracts", path: "/dashboard/smart-contracts" },
+      { icon: CircuitBoard, labelKey: "dash.nav.blockchain", path: "/dashboard/blockchain" },
+      { icon: Wallet, labelKey: "dash.nav.wallet", path: "/dashboard/wallet" },
+      { icon: Box, labelKey: "dash.smartcontracts", path: "/dashboard/smart-contracts" },
     ],
   },
   {
-    label: "Servizi Digitali",
+    labelKey: "dash.group.digital",
     items: [
-      { icon: Globe, label: "Domini / Hosting", path: "/dashboard/domains" },
-      { icon: Bot, label: "AI & Automazioni", path: "/dashboard/ai" },
-      { icon: Users, label: "Team / Referenti", path: "/dashboard/team" },
+      { icon: Globe, labelKey: "dash.nav.domains", path: "/dashboard/domains" },
+      { icon: Bot, labelKey: "dash.nav.ai", path: "/dashboard/ai" },
+      { icon: Users, labelKey: "dash.nav.team", path: "/dashboard/team" },
     ],
   },
   {
-    label: "Account",
+    labelKey: "dash.group.account",
     items: [
-      { icon: Bell, label: "Notifiche", path: "/dashboard/notifications" },
-      { icon: BookOpen, label: "Knowledge Base", path: "/dashboard/knowledge-base" },
-      { icon: Settings, label: "Impostazioni", path: "/dashboard/settings" },
-      { icon: Shield, label: "Sicurezza", path: "/dashboard/security" },
-      { icon: Key, label: "API / Accessi", path: "/dashboard/api-keys" },
-      { icon: Mail, label: "Email & Notifiche", path: "/dashboard/email-settings" },
+      { icon: Bell, labelKey: "dash.notifications", path: "/dashboard/notifications" },
+      { icon: BookOpen, labelKey: "dash.knowledge", path: "/dashboard/knowledge-base" },
+      { icon: Settings, labelKey: "dash.settings", path: "/dashboard/settings" },
+      { icon: Shield, labelKey: "dash.security", path: "/dashboard/security" },
+      { icon: Key, labelKey: "dash.nav.apikeys", path: "/dashboard/api-keys" },
+      { icon: Mail, labelKey: "dash.nav.email", path: "/dashboard/email-settings" },
     ],
   },
 ];
@@ -177,7 +177,7 @@ function DashboardLayoutContent({
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: notifData } = trpc.dashboard.notificationCount.useQuery();
   const unreadCount: number = (notifData as { count?: number })?.count ?? 0;
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const customerId = user
     ? `DYN-CLI-2026-${String(user.id).padStart(4, "0")}`
@@ -246,10 +246,10 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0 py-2">
             {menuGroups.map((group) => (
-              <div key={group.label} className="mb-1">
+              <div key={group.labelKey} className="mb-1">
                 {!isCollapsed && (
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 px-4 py-2">
-                    {group.label}
+                    {t(group.labelKey)}
                   </p>
                 )}
                 <SidebarMenu className="px-2">
@@ -260,12 +260,12 @@ function DashboardLayoutContent({
                         <SidebarMenuButton
                           isActive={isActive}
                           onClick={() => setLocation(item.path)}
-                          tooltip={item.label}
+                          tooltip={t(item.labelKey)}
                           className="h-9 font-normal text-sm"
                           style={isActive ? { color: GOLD, background: "oklch(68% 0.19 72 / 0.08)" } : {}}
                         >
                           <item.icon className="h-4 w-4 shrink-0" style={isActive ? { color: GOLD } : {}} />
-                          <span>{item.label}</span>
+                          <span>{t(item.labelKey)}</span>
                           {isActive && !isCollapsed && (
                             <ChevronRight className="ml-auto h-3 w-3 opacity-50" style={{ color: GOLD }} />
                           )}
@@ -281,7 +281,7 @@ function DashboardLayoutContent({
           <SidebarFooter className="p-3 border-t border-[oklch(20%_0.008_264)]">
             {!isCollapsed && (
               <div className="mb-2 px-1 py-1.5 rounded-lg bg-[oklch(12%_0.008_264)] border border-[oklch(20%_0.008_264)]">
-                <p className="text-[10px] text-muted-foreground/60 px-2 mb-0.5">ID Cliente</p>
+                <p className="text-[10px] text-muted-foreground/60 px-2 mb-0.5">{t("dash.customer_id")}</p>
                 <p className="text-xs font-mono font-medium px-2" style={{ color: GOLD }}>{customerId}</p>
               </div>
             )}
@@ -308,16 +308,16 @@ function DashboardLayoutContent({
                 </div>
                 <DropdownMenuItem onClick={() => setLocation("/dashboard/settings")} className="cursor-pointer text-sm mt-1">
                   <Settings className="mr-2 h-3.5 w-3.5" />
-                  Impostazioni
+                  {t("dash.settings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocation("/dashboard/security")} className="cursor-pointer text-sm">
                   <Shield className="mr-2 h-3.5 w-3.5" />
-                  Sicurezza
+                  {t("dash.security")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-[oklch(22%_0.008_264)]" />
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-sm text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-3.5 w-3.5" />
-                  Disconnetti
+                  {t("dash.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -341,7 +341,7 @@ function DashboardLayoutContent({
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors bg-[oklch(12%_0.008_264)] border border-[oklch(22%_0.008_264)] rounded-lg px-3 h-8 min-w-[200px] max-w-xs"
             >
               <Search className="h-3.5 w-3.5" />
-              <span className="text-xs">Cerca progetti, ticket, documenti...</span>
+              <span className="text-xs">{t("dash.search")}</span>
             </button>
           </div>
 
@@ -368,6 +368,7 @@ function DashboardLayoutContent({
               className="flex items-center gap-1 h-8 px-2 rounded-lg border text-xs font-semibold hover:bg-[oklch(15%_0.008_264)] transition-colors"
               style={{ borderColor: "oklch(22% 0.008 264)", color: GOLD }}
               title={language === "it" ? "Switch to English" : "Passa all'Italiano"}
+              aria-label={language === "it" ? "Switch to English" : "Passa all'Italiano"}
             >
               <Globe className="h-3.5 w-3.5" />
               {language.toUpperCase()}
@@ -392,12 +393,12 @@ function DashboardLayoutContent({
               <DropdownMenuContent align="end" className="w-52 bg-[oklch(10%_0.005_264)] border-[oklch(22%_0.008_264)]">
                 <DropdownMenuItem onClick={() => setLocation("/dashboard/settings")} className="cursor-pointer text-sm">
                   <Settings className="mr-2 h-3.5 w-3.5" />
-                  Impostazioni
+                  {t("dash.settings")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-[oklch(22%_0.008_264)]" />
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-sm text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-3.5 w-3.5" />
-                  Disconnetti
+                  {t("dash.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

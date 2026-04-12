@@ -1,16 +1,20 @@
+import { useLanguage } from "@/contexts/LanguageContext";
+
 export default function TrustBar() {
+  const { t } = useLanguage();
+
   const pillars = [
     {
-      label: "Infrastruttura enterprise-ready",
-      description: "Progettata per conformità, controllo e prevedibilità su larga scala.",
+      label: t("trust.p1.label"),
+      description: t("trust.p1.desc"),
     },
     {
-      label: "Rete di sviluppo globale",
-      description: "15 ingegneri core e 100+ collaboratori in ogni fuso orario.",
+      label: t("trust.p2.label"),
+      description: t("trust.p2.desc"),
     },
     {
-      label: "Scalabile fin dal primo giorno",
-      description: "Architettura che cresce con la tua azienda — senza re-platforming.",
+      label: t("trust.p3.label"),
+      description: t("trust.p3.desc"),
     },
   ];
 
