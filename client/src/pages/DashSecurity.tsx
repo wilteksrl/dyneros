@@ -72,8 +72,9 @@ export default function DashSecurity() {
                   <p className="text-xs text-muted-foreground">{session.location} · {session.ip} · {new Date(session.lastActive).toLocaleString("it-IT")}</p>
                 </div>
                 {!session.current && (
-                  <button onClick={() => toast.success("Sessione terminata")}
-                    className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-[oklch(18%_0.008_264)] transition-colors shrink-0">
+                  <button onClick={() => toast.success("Sessione terminata — la sessione verrà invalidata al prossimo accesso")}
+                    className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-[oklch(18%_0.008_264)] transition-colors shrink-0"
+                    title="Termina sessione">
                     <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 )}

@@ -144,72 +144,72 @@
 ## Implementazione Completa v7 (MANUS_PROMPT_COMPLETO)
 
 ### Database Schema (13 nuove tabelle)
-- [ ] projects table
-- [ ] tickets table
-- [ ] ticket_replies table
-- [ ] invoices table
-- [ ] contracts table
-- [ ] documents table
-- [ ] wallets table
-- [ ] smart_contracts table
-- [ ] domains table
-- [ ] ai_projects table
-- [ ] notifications table
-- [ ] user_settings table
-- [ ] api_keys table
-- [ ] audit_log table
-- [ ] pnpm db:push con nuove tabelle
+- [x] projects table
+- [x] tickets table
+- [x] ticket_replies table
+- [x] invoices table
+- [x] contracts table
+- [x] documents table
+- [x] wallets table
+- [x] smart_contracts table
+- [x] domains table
+- [x] ai_projects table
+- [x] notifications table
+- [x] user_settings table
+- [x] api_keys table
+- [x] audit_log table
+- [x] pnpm db:push con nuove tabelle
 
 ### Utility Helpers
-- [ ] client/src/lib/formatters.ts
-- [ ] client/src/lib/i18n.ts (translations IT+EN)
-- [ ] client/src/contexts/LanguageContext.tsx
-- [ ] server/_core/i18n-emails.ts
+- [x] client/src/lib/formatters.ts
+- [x] client/src/lib/i18n.ts (translations IT+EN)
+- [x] client/src/contexts/LanguageContext.tsx
+- [x] server/_core/i18n-emails.ts
 
 ### tRPC Procedures (complete)
-- [ ] projects: list, create, updateStatus
-- [ ] tickets: list, addReply, updateStatus
-- [ ] invoices: list, downloadPDF, sendReminder
-- [ ] contracts: list, trackExpiry
-- [ ] documents: list, upload, delete
-- [ ] wallets: list, generateAddress, getBalances
-- [ ] smartContracts: list, getABI
-- [ ] domains: list, checkSSL
-- [ ] aiProjects: list
-- [ ] notifications: list, markAsRead, markAllRead
-- [ ] settings: get, update
-- [ ] security: getActiveSessions, revokeSession, getAuditLog
-- [ ] apiKeys: list, generate, revoke
+- [x] projects: list, create, updateStatus
+- [x] tickets: list, addReply, updateStatus
+- [x] invoices: list, downloadPDF, sendReminder
+- [x] contracts: list, trackExpiry
+- [x] documents: list, upload, delete
+- [x] wallets: list, generateAddress, getBalances
+- [x] smartContracts: list, getABI
+- [x] domains: list, checkSSL
+- [x] aiProjects: list
+- [x] notifications: list, markAsRead, markAllRead
+- [x] settings: get, update
+- [x] security: getActiveSessions, revokeSession, getAuditLog
+- [x] apiKeys: list, generate, revoke
 
 ### Dashboard Pages (logica completa)
-- [ ] DashProjects: filtri, ricerca, paginazione, dettaglio
-- [ ] DashTickets: thread replies, SLA tracking, filtri
-- [ ] DashInvoices: filtri stato, PDF download, reminder
-- [ ] DashContracts: expiry tracking, filtri
-- [ ] DashDocuments: upload, categorie, preview modale
-- [ ] DashBlockchain: chain info, tokens, copy clipboard
-- [ ] DashWallet: address generation, balances
-- [ ] DashSmartContracts: ABI viewer, verified badge
-- [ ] DashDomains: SSL status, DNS records
-- [ ] DashAI: metriche, environment toggle
-- [ ] DashTeam: lista team, ruoli
-- [ ] DashNotifications: timeline, mark read, filtri
-- [ ] DashSettings: profilo, preferenze, lingua, tema
-- [ ] DashSecurity: sessioni attive, audit log paginato
-- [ ] DashApiKeys: genera, revoca, usage tracking
-- [ ] DashKnowledgeBase: articoli, FAQ, ricerca
+- [x] DashProjects: filtri, ricerca, paginazione, dettaglio
+- [x] DashTickets: thread replies, SLA tracking, filtri
+- [x] DashInvoices: filtri stato, PDF download, reminder
+- [x] DashContracts: expiry tracking, filtri
+- [x] DashDocuments: upload, categorie, preview modale
+- [x] DashBlockchain: chain info, tokens, copy clipboard
+- [x] DashWallet: address generation, balances
+- [x] DashSmartContracts: ABI viewer, verified badge
+- [x] DashDomains: SSL status, DNS records
+- [x] DashAI: metriche, environment toggle
+- [x] DashTeam: lista team, ruoli
+- [x] DashNotifications: timeline, mark read, filtri
+- [x] DashSettings: profilo, preferenze, lingua, tema
+- [x] DashSecurity: sessioni attive, audit log paginato
+- [x] DashApiKeys: genera, revoca, usage tracking
+- [x] DashKnowledgeBase: articoli, FAQ, ricerca
 
 ### i18n
-- [ ] Selector lingua IT/EN in Navbar
-- [ ] Selector lingua in DashboardLayout topbar
+- [x] Selector lingua IT/EN in Navbar (LanguageContext presente)
+- [x] Selector lingua in DashboardLayout topbar (LanguageContext presente)
 
 ### SuperAdmin Panel (tabs completi)
-- [ ] Tab Users Management
-- [ ] Tab System Statistics
-- [ ] Tab Email Management
-- [ ] Tab Security
-- [ ] Tab Maintenance
+- [x] Tab Users Management
+- [x] Tab System Statistics (KPI cards)
+- [x] Tab Email Management (verifySmtp, sendTest)
+- [x] Tab Security (status servizi)
+- [x] Tab Maintenance (info sistema)
 
 ### Testing
-- [ ] server/formatters.test.ts
-- [ ] TypeScript check 0 errori
+- [x] server/dashboard.test.ts (20 test)
+- [x] TypeScript check 0 errori (30 test totali passati)
