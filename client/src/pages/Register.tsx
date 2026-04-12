@@ -1,7 +1,8 @@
 import { trpc } from "@/lib/trpc";
-import { Building2, Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
+import { Building2, Eye, EyeOff, Globe, Loader2, Lock, Mail, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 const INPUT_STYLE = { background: "oklch(12% 0.006 264)", borderColor: "oklch(22% 0.008 264)", color: "inherit" };
@@ -12,6 +13,7 @@ export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", company: "", password: "", confirm: "" });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
+  const { language, setLanguage } = useLanguage();
 
   const register = trpc.auth.register.useMutation({
     onSuccess: () => setLocation("/dashboard"),
@@ -23,8 +25,8 @@ export default function Register() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (form.password !== form.confirm) { setError("Le password non coincidono"); return; }
-    if (form.password.length < 8) { setError("La password deve essere di almeno 8 caratteri"); return; }
+    if (form.password !== form.confirm) { setError(language === "it" ? "Le password non coincidono" : "Passwords do not match"); return; }
+    if (form.password.length < 8) { setError(language === "it" ? "La password deve essere di almeno 8 caratteri" : "Password must be at least 8 characters"); return; }
     register.mutate({ name: form.name, email: form.email, password: form.password, company: form.company || undefined });
   };
 
@@ -51,14 +53,26 @@ export default function Register() {
             </svg>
             <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Dyneros</span>
           </a>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Crea il tuo account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Registrati per accedere alla piattaforma enterprise</p>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            {language === "it" ? "Crea il tuo account" : "Create your account"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {language === "it" ? "Registrati per accedere alla piattaforma enterprise" : "Sign up to access the enterprise platform"}
+          </p>
+          <button
+            onClick={() => setLanguage(language === "it" ? "en" : "it")}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-md transition-all hover:border-[oklch(68%_0.19_72)] text-muted-foreground hover:text-foreground"
+            style={{ borderColor: "oklch(22% 0.008 264)" }}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            {language === "it" ? "Switch to English" : "Passa all'Italiano"}
+          </button>
         </div>
 
         <div className="rounded-2xl border p-8" style={{ background: "oklch(8% 0.006 264)", borderColor: "oklch(20% 0.008 264)", boxShadow: "0 0 60px oklch(68% 0.19 72 / 0.06)" }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium block mb-1.5">Nome completo</label>
+              <label className="text-sm font-medium block mb-1.5">{language === "it" ? "Nome completo" : "Full name"}</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input type="text" value={form.name} onChange={set("name")} placeholder="Mario Rossi" required
@@ -67,7 +81,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1.5">Azienda <span className="text-muted-foreground font-normal">(opzionale)</span></label>
+              <label className="text-sm font-medium block mb-1.5">{language === "it" ? "Azienda" : "Company"} <span className="text-muted-foreground font-normal">({language === "it" ? "opzionale" : "optional"})</span></label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input type="text" value={form.company} onChange={set("company")} placeholder="Acme S.r.l."
@@ -99,7 +113,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1.5">Conferma password</label>
+              <label className="text-sm font-medium block mb-1.5">{language === "it" ? "Conferma password" : "Confirm password"}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input type={showPw ? "text" : "password"} value={form.confirm} onChange={set("confirm")}
@@ -118,13 +132,15 @@ export default function Register() {
               className="w-full h-11 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60 mt-2"
               style={{ background: GOLD, color: "#000" }}>
               {register.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Crea account
+              {language === "it" ? "Crea account" : "Create account"}
             </button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Hai già un account?{" "}
-            <a href="/login" className="font-medium hover:underline" style={{ color: GOLD }}>Accedi</a>
+            {language === "it" ? "Hai già un account?" : "Already have an account?"}{" "}
+            <a href="/login" className="font-medium hover:underline" style={{ color: GOLD }}>
+              {language === "it" ? "Accedi" : "Sign In"}
+            </a>
           </p>
         </div>
 

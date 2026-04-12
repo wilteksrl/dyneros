@@ -5,13 +5,13 @@ import { Menu, X, Globe } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const navLinks = [
-  { label: "Chain", href: "#chain" },
-  { label: "Piattaforma", href: "#platform" },
-  { label: "Soluzioni", href: "#solutions" },
-  { label: "Sviluppatori", href: "#developers" },
-  { label: "Prezzi", href: "#pricing" },
-  { label: "Azienda", href: "#company" },
+const navLinkKeys = [
+  { key: "nav.chain", href: "#chain" },
+  { key: "nav.platform", href: "#platform" },
+  { key: "nav.solutions", href: "#solutions" },
+  { key: "nav.developers", href: "#developers" },
+  { key: "nav.pricing", href: "#pricing" },
+  { key: "nav.company", href: "#company" },
 ];
 
 export default function Navbar() {
@@ -76,13 +76,13 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {navLinkKeys.map((link) => (
               <button
-                key={link.label}
+                key={link.key}
                 onClick={() => handleAnchor(link.href)}
                 className="px-4 py-2 text-sm font-medium text-[oklch(65%_0.010_264)] hover:text-[oklch(95%_0.005_264)] transition-colors rounded-md hover:bg-[oklch(18%_0.008_264)]"
               >
-                {link.label}
+                {t(link.key)}
               </button>
             ))}
           </nav>
@@ -104,7 +104,7 @@ export default function Navbar() {
                   size="sm"
                   className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
                 >
-                  Dashboard
+                  {t("nav.dashboard")}
                 </Button>
               </Link>
             ) : (
@@ -115,7 +115,7 @@ export default function Navbar() {
                     size="sm"
                     className="text-[oklch(65%_0.010_264)] hover:text-foreground"
                   >
-                    Accedi
+                    {t("nav.login")}
                   </Button>
                 </Link>
                 <Link href="/register">
@@ -123,7 +123,7 @@ export default function Navbar() {
                     size="sm"
                     className="bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold"
                   >
-                    Inizia Ora
+                    {t("nav.register")}
                   </Button>
                 </Link>
               </>
@@ -145,32 +145,39 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-[oklch(10%_0.006_264)] border-t border-border">
           <div className="container py-4 flex flex-col gap-1">
-            {navLinks.map((link) => (
+            {navLinkKeys.map((link) => (
               <button
-                key={link.label}
+                key={link.key}
                 onClick={() => handleAnchor(link.href)}
                 className="text-left px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-[oklch(18%_0.008_264)] rounded-md transition-colors"
               >
-                {link.label}
+                {t(link.key)}
               </button>
             ))}
             <div className="pt-3 border-t border-border flex flex-col gap-2">
+              <button
+                onClick={() => setLanguage(language === "it" ? "en" : "it")}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium border border-[oklch(25%_0.008_264)] rounded-md transition-all hover:border-[oklch(68%_0.19_72)] text-[oklch(65%_0.010_264)] hover:text-foreground"
+              >
+                <Globe className="w-4 h-4" />
+                {language === "it" ? "Switch to English" : "Passa all'Italiano"}
+              </button>
               {isAuthenticated ? (
                 <Link href="/dashboard">
                   <Button className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold">
-                    Dashboard
+                    {t("nav.dashboard")}
                   </Button>
                 </Link>
               ) : (
                 <>
                   <Link href="/login" className="w-full">
                     <Button variant="outline" className="w-full border-border">
-                      Accedi
+                      {t("nav.login")}
                     </Button>
                   </Link>
                   <Link href="/register" className="w-full">
                     <Button className="w-full bg-[oklch(68%_0.19_72)] text-[oklch(10%_0.005_264)] hover:bg-[oklch(73%_0.17_74)] font-semibold">
-                      Inizia Ora
+                      {t("nav.register")}
                     </Button>
                   </Link>
                 </>

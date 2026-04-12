@@ -1,7 +1,8 @@
 import { trpc } from "@/lib/trpc";
-import { Eye, EyeOff, Loader2, Lock, Mail, Shield } from "lucide-react";
+import { Eye, EyeOff, Globe, Loader2, Lock, Mail, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 
@@ -12,6 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
+  const { language, setLanguage } = useLanguage();
 
   const login = trpc.auth.login.useMutation({
     onSuccess: () => setLocation("/dashboard"),
@@ -48,8 +50,22 @@ export default function Login() {
             </svg>
             <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Dyneros</span>
           </a>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Accedi alla piattaforma</h1>
-          <p className="text-sm text-muted-foreground mt-1">Inserisci le tue credenziali per continuare</p>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              {language === "it" ? "Accedi alla piattaforma" : "Sign in to your account"}
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {language === "it" ? "Inserisci le tue credenziali per continuare" : "Enter your credentials to continue"}
+          </p>
+          <button
+            onClick={() => setLanguage(language === "it" ? "en" : "it")}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-md transition-all hover:border-[oklch(68%_0.19_72)] text-muted-foreground hover:text-foreground"
+            style={{ borderColor: "oklch(22% 0.008 264)" }}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            {language === "it" ? "Switch to English" : "Passa all'Italiano"}
+          </button>
         </div>
 
         <div className="rounded-2xl border p-8" style={{ background: "oklch(8% 0.006 264)", borderColor: "oklch(20% 0.008 264)", boxShadow: "0 0 60px oklch(68% 0.19 72 / 0.06)" }}>
@@ -80,7 +96,7 @@ export default function Login() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-medium">Password</label>
                 <a href="/forgot-password" className="text-xs hover:underline" style={{ color: GOLD }}>
-                  Password dimenticata?
+                  {language === "it" ? "Password dimenticata?" : "Forgot password?"}
                 </a>
               </div>
               <div className="relative">
@@ -113,14 +129,14 @@ export default function Login() {
               className="w-full h-11 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
               style={{ background: GOLD, color: "#000" }}>
               {login.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Accedi
+              {language === "it" ? "Accedi" : "Sign In"}
             </button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Non hai un account?{" "}
+            {language === "it" ? "Non hai un account?" : "Don't have an account?"}{" "}
             <a href="/register" className="font-medium hover:underline" style={{ color: GOLD }}>
-              Registrati
+              {language === "it" ? "Registrati" : "Sign Up"}
             </a>
           </p>
         </div>
@@ -131,7 +147,9 @@ export default function Login() {
           <a href="/privacy-policy" className="underline">Privacy Policy</a>
         </p>
         <p className="text-center text-sm text-muted-foreground mt-3">
-          <a href="/" className="hover:text-foreground transition-colors">← Torna a dyneros.com</a>
+          <a href="/" className="hover:text-foreground transition-colors">
+            ← {language === "it" ? "Torna a dyneros.com" : "Back to dyneros.com"}
+          </a>
         </p>
       </div>
     </div>

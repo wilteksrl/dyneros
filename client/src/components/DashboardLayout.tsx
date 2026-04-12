@@ -51,6 +51,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import { trpc } from "@/lib/trpc";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const GOLD = "oklch(68% 0.19 72)";
 
@@ -176,6 +177,7 @@ function DashboardLayoutContent({
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: notifData } = trpc.dashboard.notificationCount.useQuery();
   const unreadCount: number = (notifData as { count?: number })?.count ?? 0;
+  const { language, setLanguage } = useLanguage();
 
   const customerId = user
     ? `DYN-CLI-2026-${String(user.id).padStart(4, "0")}`
@@ -359,6 +361,16 @@ function DashboardLayoutContent({
               className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors"
             >
               <Settings className="h-4 w-4 text-muted-foreground" />
+            </button>
+
+            <button
+              onClick={() => setLanguage(language === "it" ? "en" : "it")}
+              className="flex items-center gap-1 h-8 px-2 rounded-lg border text-xs font-semibold hover:bg-[oklch(15%_0.008_264)] transition-colors"
+              style={{ borderColor: "oklch(22% 0.008 264)", color: GOLD }}
+              title={language === "it" ? "Switch to English" : "Passa all'Italiano"}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {language.toUpperCase()}
             </button>
 
             <div className="h-6 w-px bg-[oklch(22%_0.008_264)]" />

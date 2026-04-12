@@ -2,9 +2,10 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import {
-  AlertTriangle, CheckCircle, Crown, Loader2, LogOut, Mail, Search,
+  AlertTriangle, CheckCircle, Crown, Globe, Loader2, LogOut, Mail, Search,
   Server, Shield, Trash2, UserCheck, UserX, Users, Send, CheckCircle2
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
 const GOLD = "oklch(68% 0.19 72)";
@@ -29,6 +30,7 @@ export default function SuperAdmin() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [testEmailTo, setTestEmailTo] = useState("");
   const [smtpResult, setSmtpResult] = useState<{ ok: boolean; error?: string } | null>(null);
+  const { language, setLanguage } = useLanguage();
 
   const updateRole = trpc.superadmin.updateUserRole.useMutation({
     onSuccess: () => { refetch(); refetchStats(); toast.success("Ruolo aggiornato"); },
@@ -92,12 +94,20 @@ export default function SuperAdmin() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground hidden sm:block">{me.email}</span>
+          <button
+            onClick={() => setLanguage(language === "it" ? "en" : "it")}
+            className="flex items-center gap-1 h-8 px-2 rounded-lg border text-xs font-semibold hover:bg-white/5 transition-colors"
+            style={{ borderColor: BORDER, color: GOLD }}
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {language.toUpperCase()}
+          </button>
           <a href="/dashboard" className="text-sm px-3 h-8 rounded-lg border flex items-center gap-1.5 hover:bg-white/5 transition-colors"
             style={{ borderColor: BORDER }}>
             Dashboard
           </a>
           <button onClick={() => logout.mutate()} className="text-sm px-3 h-8 rounded-lg flex items-center gap-1.5 hover:bg-white/5 transition-colors text-muted-foreground">
-            <LogOut className="h-3.5 w-3.5" /> Esci
+            <LogOut className="h-3.5 w-3.5" /> {language === "it" ? "Esci" : "Logout"}
           </button>
         </div>
       </header>
