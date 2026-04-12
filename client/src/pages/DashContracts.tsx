@@ -24,7 +24,7 @@ function Badge({ color, label }: { color: string; label: string }) {
 
 export default function DashContracts() {
   const { data: docs, isLoading } = trpc.dashboard.documents.useQuery();
-  const contracts = docs?.filter(d => ["contract", "sow", "nda"].includes(d.type)) ?? [];
+  const contracts = docs?.filter(d => d.type !== null && ["contract", "sow", "nda"].includes(d.type)) ?? [];
 
   return (
     <DashboardLayout>
@@ -68,9 +68,9 @@ export default function DashContracts() {
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span>{doc.category}</span>
                     <span>·</span>
-                    <span>{doc.size}</span>
+                    <span>{doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : "—"}</span>
                     <span>·</span>
-                    <span>{doc.uploaded}</span>
+                    <span>{new Date(doc.createdAt).toLocaleDateString("it-IT")}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

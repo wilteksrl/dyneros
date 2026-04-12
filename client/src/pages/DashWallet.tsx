@@ -100,28 +100,32 @@ export default function DashWallet() {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
             Transazioni Recenti
           </h2>
-          <div className="space-y-2">
-            {data.recentTx.map(tx => (
-              <div key={tx.hash} className="flex items-center gap-4 p-3 rounded-lg"
-                style={{ background: "oklch(13% 0.006 264)", border: `1px solid ${BORDER}` }}>
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-[oklch(18%_0.008_264)]">
-                  <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-xs font-mono text-muted-foreground truncate">{tx.hash}</p>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[oklch(18%_0.008_264)] text-muted-foreground">{tx.type}</span>
+          {data.recentTx.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Nessuna transazione recente</p>
+          ) : (
+            <div className="space-y-2">
+              {(data.recentTx as Array<{ hash: string; type: string; amount: string; to: string; time: string; status: string }>).map(tx => (
+                <div key={tx.hash} className="flex items-center gap-4 p-3 rounded-lg"
+                  style={{ background: "oklch(13% 0.006 264)", border: `1px solid ${BORDER}` }}>
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-[oklch(18%_0.008_264)]">
+                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-medium mt-0.5">{tx.amount}</p>
-                  <p className="text-xs text-muted-foreground">→ {tx.to} · {new Date(tx.time).toLocaleString("it-IT")}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs font-mono text-muted-foreground truncate">{tx.hash}</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[oklch(18%_0.008_264)] text-muted-foreground">{tx.type}</span>
+                    </div>
+                    <p className="text-sm font-medium mt-0.5">{tx.amount}</p>
+                    <p className="text-xs text-muted-foreground">→ {tx.to} · {new Date(tx.time).toLocaleString("it-IT")}</p>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    style={{ background: "oklch(60% 0.18 145 / 0.12)", color: "oklch(60% 0.18 145)" }}>
+                    {tx.status}
+                  </span>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                  style={{ background: "oklch(60% 0.18 145 / 0.12)", color: "oklch(60% 0.18 145)" }}>
-                  {tx.status}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 flex-wrap">

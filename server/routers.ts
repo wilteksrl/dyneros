@@ -1,9 +1,13 @@
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, and, desc, asc, count, sql, isNull } from "drizzle-orm";
 import { getDb } from "./db";
-import { users } from "../drizzle/schema";
+import {
+  users, projects, tickets, ticketReplies, invoices, contracts,
+  documents, wallets, smartContracts, domains, aiProjects,
+  notifications, userSettings, apiKeys, auditLog
+} from "../drizzle/schema";
 import { COOKIE_NAME } from "@shared/const";
 import {
   hashPassword, verifyPassword, generateToken, signSessionJWT,
@@ -15,6 +19,8 @@ import {
   templateNewTicket, templateTicketUpdate, templateContractExpiry,
   templateInvoiceOverdue, templateMilestoneAlert, templateCriticalAlert,
 } from "./email";
+import crypto from "crypto";
+
 const GOLD_CHAIN = {
   chainId: 24589,
   name: "DYNEROS Chain",
@@ -37,51 +43,16 @@ const OFFICIAL_CONTRACTS = {
   weth9: "0xd270c9AA03019c894c68e4Ea134995Cd30EC226b",
 };
 
-const MOCK_PROJECTS = [
-  { id: "PRJ-2026-0001", name: "Dyneros Chain Explorer v2", type: "blockchain_infrastructure", status: "in_progress", priority: "high", startDate: "2026-01-15", eta: "2026-06-30", environment: "production", stack: ["Solidity", "React", "Node.js"], progress: 65 },
-  { id: "PRJ-2026-0002", name: "dUSD Stablecoin Integration", type: "smart_contract", status: "in_progress", priority: "high", startDate: "2026-02-01", eta: "2026-05-15", environment: "staging", stack: ["Solidity", "Hardhat", "TypeScript"], progress: 40 },
-  { id: "PRJ-2026-0003", name: "Corporate Portal Enterprise", type: "web_app", status: "completed", priority: "medium", startDate: "2025-10-01", eta: "2026-03-31", environment: "production", stack: ["React", "tRPC", "PostgreSQL"], progress: 100 },
-  { id: "PRJ-2026-0004", name: "AI Compliance Automation", type: "ai_system", status: "planning", priority: "medium", startDate: "2026-04-01", eta: "2026-09-30", environment: "staging", stack: ["Python", "LangChain", "FastAPI"], progress: 10 },
-];
-
-const MOCK_TICKETS = [
-  { id: "TKT-2026-0041", subject: "RPC endpoint latency spike su mainnet", category: "blockchain_integration", priority: "critical", status: "in_progress", project: "PRJ-2026-0001", created: "2026-04-05T09:00:00Z", sla: "4h", assignee: "Marco Ferretti" },
-  { id: "TKT-2026-0040", subject: "Revisione ABI smart contract dUSD", category: "smart_contract_issue", priority: "high", status: "waiting_for_client", project: "PRJ-2026-0002", created: "2026-04-03T14:30:00Z", sla: "8h", assignee: "Luca Bianchi" },
-  { id: "TKT-2026-0038", subject: "Aggiornamento certificato SSL dominio staging", category: "deployment", priority: "medium", status: "open", project: "PRJ-2026-0003", created: "2026-04-01T11:00:00Z", sla: "24h", assignee: "Sara Conti" },
-  { id: "TKT-2026-0035", subject: "Richiesta documentazione API v2", category: "richiesta_sviluppo", priority: "low", status: "resolved", project: "PRJ-2026-0001", created: "2026-03-28T10:00:00Z", sla: "48h", assignee: "Marco Ferretti" },
-];
-
-const MOCK_INVOICES = [
-  { id: "INV-2026-0012", amount: 8500, currency: "EUR", status: "paid", issued: "2026-03-01", due: "2026-03-31", description: "Sviluppo Smart Contract dUSD — Marzo 2026" },
-  { id: "INV-2026-0011", amount: 12000, currency: "EUR", status: "unpaid", issued: "2026-04-01", due: "2026-04-30", description: "Retainer mensile Enterprise — Aprile 2026" },
-  { id: "INV-2026-0010", amount: 3200, currency: "EUR", status: "paid", issued: "2026-02-01", due: "2026-02-28", description: "Consulenza blockchain architecture — Febbraio 2026" },
-  { id: "INV-2026-0009", amount: 1800, currency: "EUR", status: "overdue", issued: "2026-01-15", due: "2026-02-15", description: "Hosting & Deploy Q1 2026" },
-];
-
-const MOCK_NOTIFICATIONS = [
-  { id: 1, type: "ticket_update", title: "Ticket TKT-2026-0041 aggiornato", message: "Marco Ferretti ha aggiunto un aggiornamento al ticket RPC latency.", read: false, createdAt: "2026-04-05T10:30:00Z" },
-  { id: 2, type: "invoice", title: "Nuova fattura emessa", message: "Fattura INV-2026-0011 di €12.000 disponibile per il pagamento.", read: false, createdAt: "2026-04-01T09:00:00Z" },
-  { id: 3, type: "milestone", title: "Milestone completata", message: "Milestone 'Smart Contract Audit' del progetto dUSD completata.", read: true, createdAt: "2026-03-30T15:00:00Z" },
-  { id: 4, type: "deployment", title: "Deploy completato", message: "Corporate Portal v2.4.1 distribuito in produzione con successo.", read: true, createdAt: "2026-03-28T18:00:00Z" },
-];
-
-const MOCK_SMART_CONTRACTS = [
-  { id: "SC-2026-0001", name: "dUSD Stablecoin", projectId: "PRJ-2026-0002", network: "DYNEROS Chain", address: "0xfa69e3c56aCe1f93C6E332a656318Ba0Cc4d7e57", status: "active", verified: true, deployDate: "2025-11-15", owner: "Dyneros Treasury", relatedToken: "dUSD" },
-  { id: "SC-2026-0002", name: "dGLD Token", projectId: "PRJ-2026-0001", network: "DYNEROS Chain", address: "0xB43369f13013799B4B5a4c6B46F80e5618B25292", status: "active", verified: true, deployDate: "2025-11-15", owner: "Dyneros Treasury", relatedToken: "dGLD" },
-  { id: "SC-2026-0003", name: "WDYN Wrapper", projectId: "PRJ-2026-0001", network: "DYNEROS Chain", address: "0xd270c9AA03019c894c68e4Ea134995Cd30EC226b", status: "active", verified: true, deployDate: "2025-10-01", owner: "Dyneros Core", relatedToken: "WDYN" },
-  { id: "SC-2026-0004", name: "DEX Router", projectId: "PRJ-2026-0001", network: "DYNEROS Chain", address: "0xD6c26Ce48bDe29bca596Abe5C3b3DF93C6b91F97", status: "active", verified: true, deployDate: "2025-10-01", owner: "Dyneros Core", relatedToken: null },
-];
-
-const MOCK_DOCUMENTS = [
-  { id: "DOC-2026-0001", name: "Contratto Enterprise 2026", type: "contract", category: "Contratti", size: "245 KB", uploaded: "2026-01-10", author: "Dyneros Legal", status: "signed" },
-  { id: "DOC-2026-0002", name: "SOW — Blockchain Infrastructure Q1", type: "sow", category: "Preventivi", size: "180 KB", uploaded: "2026-01-15", author: "Dyneros PM", status: "approved" },
-  { id: "DOC-2026-0003", name: "NDA Riservatezza 2026", type: "nda", category: "Legale", size: "95 KB", uploaded: "2026-01-05", author: "Dyneros Legal", status: "signed" },
-  { id: "DOC-2026-0004", name: "Specifiche Tecniche dUSD v2", type: "technical", category: "Tecnico", size: "520 KB", uploaded: "2026-02-20", author: "Dyneros Tech", status: "final" },
-  { id: "DOC-2026-0005", name: "Report Audit Smart Contract", type: "report", category: "Tecnico", size: "1.2 MB", uploaded: "2026-03-15", author: "Dyneros Security", status: "final" },
-];
+function generateApiKey(): { key: string; prefix: string; hash: string } {
+  const raw = `dyn_live_${crypto.randomBytes(24).toString("hex")}`;
+  const prefix = raw.slice(0, 12);
+  const hash = crypto.createHash("sha256").update(raw).digest("hex");
+  return { key: raw, prefix, hash };
+}
 
 export const appRouter = router({
   system: systemRouter,
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
 
@@ -101,7 +72,7 @@ export const appRouter = router({
         const passwordHash = await hashPassword(input.password);
         const verifyToken = generateToken();
         const verifyExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        const [inserted] = await db.insert(users).values({
+        await db.insert(users).values({
           name: input.name,
           email: input.email,
           passwordHash,
@@ -118,6 +89,7 @@ export const appRouter = router({
         });
         const newUser = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
         if (!newUser[0]) throw new Error("Errore creazione utente");
+        await db.insert(userSettings).values({ userId: newUser[0].id }).catch(() => {});
         const token = await signSessionJWT(newUser[0].id, newUser[0].role);
         const secure = ctx.req.protocol === "https" || (ctx.req.headers["x-forwarded-proto"] === "https");
         ctx.res.cookie(COOKIE_NAME, token, sessionCookieOptions(secure));
@@ -225,108 +197,288 @@ export const appRouter = router({
   }),
 
   dashboard: router({
-    notificationCount: protectedProcedure.query(() => {
-      return { count: MOCK_NOTIFICATIONS.filter(n => !n.read).length };
+    notificationCount: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { count: 0 };
+      const rows = await db.select({ c: count() }).from(notifications)
+        .where(and(eq(notifications.userId, ctx.user.id), eq(notifications.read, false)));
+      return { count: rows[0]?.c ?? 0 };
     }),
 
-    stats: protectedProcedure.query(({ ctx }) => {
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
       const user = ctx.user;
-      const tier = user.role === "admin" ? "Enterprise" : "Business";
+      const tier = user.role === "admin" || user.role === "superadmin" ? "Enterprise" : "Business";
       const customerId = `DYN-CLI-2026-${String(user.id).padStart(4, "0")}`;
+      let kpi = { activeProjects: 0, openTickets: 0, pendingInvoices: 0, activeServices: 8, deployedContracts: 0, completedTasksMonth: 0, onlineEnvironments: 0, connectedWallets: 0, documentsShared: 0 };
+      let recentActivity: { id: number; type: string; text: string; time: string; icon: string }[] = [];
+      let criticalTickets: { id: number; ticketNumber: string; subject: string; priority: string; status: string }[] = [];
+      if (db) {
+        const [pRows, tRows, iRows, scRows, wRows, dRows] = await Promise.all([
+          db.select({ c: count() }).from(projects).where(and(eq(projects.userId, user.id), eq(projects.status, "in_progress"))),
+          db.select({ c: count() }).from(tickets).where(and(eq(tickets.userId, user.id), sql`status NOT IN ('resolved','closed')`)),
+          db.select({ c: count() }).from(invoices).where(and(eq(invoices.userId, user.id), sql`status IN ('unpaid','overdue')`)),
+          db.select({ c: count() }).from(smartContracts).where(eq(smartContracts.userId, user.id)),
+          db.select({ c: count() }).from(wallets).where(eq(wallets.userId, user.id)),
+          db.select({ c: count() }).from(documents).where(and(eq(documents.userId, user.id), isNull(documents.deletedAt))),
+        ]);
+        kpi = {
+          activeProjects: pRows[0]?.c ?? 0,
+          openTickets: tRows[0]?.c ?? 0,
+          pendingInvoices: iRows[0]?.c ?? 0,
+          activeServices: 8,
+          deployedContracts: scRows[0]?.c ?? 0,
+          completedTasksMonth: 0,
+          onlineEnvironments: 3,
+          connectedWallets: wRows[0]?.c ?? 0,
+          documentsShared: dRows[0]?.c ?? 0,
+        };
+        const critRows = await db.select({ id: tickets.id, ticketNumber: tickets.ticketNumber, subject: tickets.subject, priority: tickets.priority, status: tickets.status })
+          .from(tickets).where(and(eq(tickets.userId, user.id), sql`priority IN ('critical','high') AND status NOT IN ('resolved','closed')`)).limit(2);
+        criticalTickets = critRows;
+        const notifRows = await db.select().from(notifications).where(eq(notifications.userId, user.id)).orderBy(desc(notifications.createdAt)).limit(6);
+        recentActivity = notifRows.map((n, i) => ({
+          id: n.id,
+          type: n.type,
+          text: n.title,
+          time: new Date(n.createdAt).toLocaleDateString("it-IT"),
+          icon: n.type,
+        }));
+      }
       return {
-        customerId,
-        tier,
+        customerId, tier,
         accountStatus: "active" as const,
         accountManager: { name: "Alessia Romano", email: "a.romano@dyneros.com", role: "Account Manager" },
         techLead: { name: "Marco Ferretti", email: "m.ferretti@dyneros.com", role: "Technical Lead" },
         lastLogin: new Date(),
-        kpi: {
-          activeProjects: MOCK_PROJECTS.filter(p => p.status === "in_progress").length,
-          openTickets: MOCK_TICKETS.filter(t => t.status !== "resolved" && t.status !== "closed").length,
-          pendingInvoices: MOCK_INVOICES.filter(i => i.status === "unpaid" || i.status === "overdue").length,
-          activeServices: 8,
-          deployedContracts: MOCK_SMART_CONTRACTS.length,
-          completedTasksMonth: 24,
-          onlineEnvironments: 3,
-          connectedWallets: 2,
-          documentsShared: MOCK_DOCUMENTS.length,
-        },
-        recentActivity: [
-          { id: 1, type: "ticket_update", text: "Ticket TKT-2026-0041 aggiornato da Marco Ferretti", time: "2h fa", icon: "ticket" },
-          { id: 2, type: "invoice", text: "Fattura INV-2026-0011 emessa — €12.000", time: "3 giorni fa", icon: "invoice" },
-          { id: 3, type: "milestone", text: "Milestone 'Smart Contract Audit' completata", time: "6 giorni fa", icon: "milestone" },
-          { id: 4, type: "deployment", text: "Deploy Corporate Portal v2.4.1 in produzione", time: "8 giorni fa", icon: "deploy" },
-          { id: 5, type: "contract", text: "Contratto Enterprise 2026 firmato digitalmente", time: "12 giorni fa", icon: "contract" },
-          { id: 6, type: "project", text: "Progetto AI Compliance Automation avviato", time: "15 giorni fa", icon: "project" },
-        ],
+        kpi,
+        recentActivity,
         nextMilestone: { name: "dUSD Mainnet Launch", project: "PRJ-2026-0002", date: "2026-05-15", daysLeft: 38 },
-        criticalTickets: MOCK_TICKETS.filter(t => t.priority === "critical" || t.priority === "high").slice(0, 2),
+        criticalTickets,
       };
     }),
 
-    projects: protectedProcedure.query(() => MOCK_PROJECTS),
-
-    projectDetail: protectedProcedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) => {
-        const project = MOCK_PROJECTS.find(p => p.id === input.id);
-        if (!project) return null;
-        return {
-          ...project,
-          milestones: [
-            { id: 1, name: "Architettura & Design", status: "completed", date: "2026-02-15" },
-            { id: 2, name: "Sviluppo Core", status: "in_progress", date: "2026-04-30" },
-            { id: 3, name: "Audit & Testing", status: "pending", date: "2026-05-15" },
-            { id: 4, name: "Deploy Mainnet", status: "pending", date: "2026-06-30" },
-          ],
-          team: [
-            { name: "Marco Ferretti", role: "Technical Lead", avatar: "MF" },
-            { name: "Luca Bianchi", role: "Blockchain Dev", avatar: "LB" },
-            { name: "Sara Conti", role: "DevOps", avatar: "SC" },
-          ],
-          recentActivity: [
-            { text: "Deploy su staging completato", time: "2 giorni fa" },
-            { text: "Revisione codice smart contract", time: "4 giorni fa" },
-            { text: "Milestone 'Audit' pianificata", time: "1 settimana fa" },
-          ],
-        };
+    projects: protectedProcedure
+      .input(z.object({ status: z.string().optional(), search: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        let q = db.select().from(projects).where(eq(projects.userId, ctx.user.id)).$dynamic();
+        const rows = await q.orderBy(desc(projects.createdAt));
+        return rows.filter(p => {
+          if (input?.status && input.status !== "all" && p.status !== input.status) return false;
+          if (input?.search && !p.name.toLowerCase().includes(input.search.toLowerCase())) return false;
+          return true;
+        });
       }),
 
-    tickets: protectedProcedure.query(() => MOCK_TICKETS),
+    createProject: protectedProcedure
+      .input(z.object({
+        name: z.string().min(2),
+        description: z.string().optional(),
+        type: z.enum(["blockchain_infrastructure", "smart_contract", "web_app", "ai_system", "other"]),
+        priority: z.enum(["low", "medium", "high"]),
+        environment: z.enum(["dev", "staging", "production"]),
+        eta: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(projects).values({
+          userId: ctx.user.id,
+          name: input.name,
+          description: input.description ?? null,
+          type: input.type,
+          priority: input.priority,
+          environment: input.environment,
+          status: "planning",
+          progress: 0,
+          startDate: new Date(),
+          eta: input.eta ? new Date(input.eta) : null,
+        });
+        await db.insert(notifications).values({
+          userId: ctx.user.id,
+          type: "system",
+          title: `Progetto "${input.name}" creato`,
+          message: `Il progetto è stato creato con successo.`,
+          read: false,
+        });
+        return { success: true };
+      }),
+
+    updateProject: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["planning", "in_progress", "completed", "on_hold"]).optional(),
+        progress: z.number().min(0).max(100).optional(),
+        priority: z.enum(["low", "medium", "high"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const { id, ...updates } = input;
+        await db.update(projects).set(updates).where(and(eq(projects.id, id), eq(projects.userId, ctx.user.id)));
+        return { success: true };
+      }),
+
+    tickets: protectedProcedure
+      .input(z.object({ status: z.string().optional(), priority: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const rows = await db.select().from(tickets).where(eq(tickets.userId, ctx.user.id)).orderBy(desc(tickets.createdAt));
+        return rows.filter(t => {
+          if (input?.status && input.status !== "all" && t.status !== input.status) return false;
+          if (input?.priority && input.priority !== "all" && t.priority !== input.priority) return false;
+          return true;
+        });
+      }),
 
     ticketDetail: protectedProcedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) => {
-        const ticket = MOCK_TICKETS.find(t => t.id === input.id);
-        if (!ticket) return null;
-        return {
-          ...ticket,
-          description: "Sono stati rilevati picchi di latenza sull'endpoint RPC principale della mainnet Dyneros. Il tempo di risposta medio è salito da 120ms a 850ms nelle ultime 6 ore. Impatto: degradazione delle performance per le DApp connesse.",
-          thread: [
-            { author: "Sistema", role: "auto", text: "Ticket aperto automaticamente dal sistema di monitoring.", time: "2026-04-05T09:00:00Z" },
-            { author: "Marco Ferretti", role: "dyneros", text: "Preso in carico. Sto analizzando i log del nodo validator #7.", time: "2026-04-05T09:45:00Z" },
-            { author: "Sara Conti", role: "dyneros", text: "Confermato: il nodo #7 ha un problema di memoria. Stiamo procedendo con il restart controllato.", time: "2026-04-05T10:15:00Z" },
-          ],
-          statusHistory: [
-            { status: "open", time: "2026-04-05T09:00:00Z" },
-            { status: "triage", time: "2026-04-05T09:30:00Z" },
-            { status: "in_progress", time: "2026-04-05T09:45:00Z" },
-          ],
-        };
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return null;
+        const rows = await db.select().from(tickets).where(and(eq(tickets.id, input.id), eq(tickets.userId, ctx.user.id))).limit(1);
+        if (!rows[0]) return null;
+        const replies = await db.select({
+          id: ticketReplies.id,
+          message: ticketReplies.message,
+          isStaff: ticketReplies.isStaff,
+          createdAt: ticketReplies.createdAt,
+          userName: users.name,
+        }).from(ticketReplies)
+          .leftJoin(users, eq(ticketReplies.userId, users.id))
+          .where(eq(ticketReplies.ticketId, input.id))
+          .orderBy(asc(ticketReplies.createdAt));
+        return { ...rows[0], replies };
       }),
 
-    documents: protectedProcedure.query(() => MOCK_DOCUMENTS),
+    createTicket: protectedProcedure
+      .input(z.object({
+        subject: z.string().min(5),
+        description: z.string().optional(),
+        category: z.string(),
+        priority: z.enum(["low", "medium", "high", "critical"]),
+        projectId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const countRows = await db.select({ c: count() }).from(tickets).where(eq(tickets.userId, ctx.user.id));
+        const num = (countRows[0]?.c ?? 0) + 1;
+        const ticketNumber = `TKT-${new Date().getFullYear()}-${String(num).padStart(4, "0")}`;
+        const slaMap: Record<string, number> = { low: 48, medium: 24, high: 8, critical: 4 };
+        await db.insert(tickets).values({
+          userId: ctx.user.id,
+          ticketNumber,
+          subject: input.subject,
+          description: input.description ?? null,
+          category: input.category,
+          priority: input.priority,
+          status: "open",
+          slaHours: slaMap[input.priority] ?? 24,
+          projectId: input.projectId ?? null,
+        });
+        await db.insert(notifications).values({
+          userId: ctx.user.id,
+          type: "ticket_update",
+          title: `Ticket ${ticketNumber} aperto`,
+          message: input.subject,
+          read: false,
+        });
+        return { success: true, ticketNumber };
+      }),
 
-    invoices: protectedProcedure.query(() => MOCK_INVOICES),
+    replyTicket: protectedProcedure
+      .input(z.object({ ticketId: z.number(), message: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(ticketReplies).values({
+          ticketId: input.ticketId,
+          userId: ctx.user.id,
+          message: input.message,
+          isStaff: false,
+        });
+        await db.update(tickets).set({ status: "waiting_for_client", updatedAt: new Date() }).where(eq(tickets.id, input.ticketId));
+        return { success: true };
+      }),
 
-    notifications: protectedProcedure.query(() => MOCK_NOTIFICATIONS),
+    invoices: protectedProcedure
+      .input(z.object({ status: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const rows = await db.select().from(invoices).where(eq(invoices.userId, ctx.user.id)).orderBy(desc(invoices.issued));
+        return rows.filter(i => {
+          if (input?.status && input.status !== "all" && i.status !== input.status) return false;
+          return true;
+        });
+      }),
 
-    smartContracts: protectedProcedure.query(() => ({
-      contracts: MOCK_SMART_CONTRACTS,
-      officialTokens: OFFICIAL_TOKENS,
-      officialContracts: OFFICIAL_CONTRACTS,
-      chain: GOLD_CHAIN,
-    })),
+    contracts: protectedProcedure
+      .input(z.object({ status: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const rows = await db.select().from(contracts).where(eq(contracts.userId, ctx.user.id)).orderBy(desc(contracts.createdAt));
+        return rows.filter(c => {
+          if (input?.status && input.status !== "all" && c.status !== input.status) return false;
+          return true;
+        });
+      }),
+
+    documents: protectedProcedure
+      .input(z.object({ category: z.string().optional(), search: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const rows = await db.select().from(documents)
+          .where(and(eq(documents.userId, ctx.user.id), isNull(documents.deletedAt)))
+          .orderBy(desc(documents.createdAt));
+        return rows.filter(d => {
+          if (input?.category && input.category !== "all" && d.category !== input.category) return false;
+          if (input?.search && !d.name.toLowerCase().includes(input.search.toLowerCase())) return false;
+          return true;
+        });
+      }),
+
+    notifications: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(notifications).where(eq(notifications.userId, ctx.user.id)).orderBy(desc(notifications.createdAt)).limit(50);
+    }),
+
+    markNotificationRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(notifications).set({ read: true }).where(and(eq(notifications.id, input.id), eq(notifications.userId, ctx.user.id)));
+        return { success: true };
+      }),
+
+    markAllNotificationsRead: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database non disponibile");
+      await db.update(notifications).set({ read: true }).where(eq(notifications.userId, ctx.user.id));
+      return { success: true };
+    }),
+
+    smartContracts: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      let userContracts: typeof smartContracts.$inferSelect[] = [];
+      if (db) {
+        userContracts = await db.select().from(smartContracts).where(eq(smartContracts.userId, ctx.user.id)).orderBy(desc(smartContracts.createdAt));
+      }
+      return {
+        contracts: userContracts,
+        officialTokens: OFFICIAL_TOKENS,
+        officialContracts: OFFICIAL_CONTRACTS,
+        chain: GOLD_CHAIN,
+      };
+    }),
 
     blockchainInfo: protectedProcedure.query(() => ({
       chain: GOLD_CHAIN,
@@ -341,71 +493,130 @@ export const appRouter = router({
       },
     })),
 
-    walletInfo: protectedProcedure.query(({ ctx }) => ({
-      addresses: [
-        { label: "Account Principale", address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", type: "eoa" },
-        { label: "Treasury Multisig", address: "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199", type: "multisig" },
-      ],
-      portfolio: OFFICIAL_TOKENS.map(t => ({ ...t, balance: (Math.random() * 10000).toFixed(2) })),
-      recentTx: [
-        { hash: "0xabc123...def456", type: "Transfer", amount: "500 dUSD", to: "0x1234...5678", time: "2026-04-04T12:00:00Z", status: "confirmed" },
-        { hash: "0xfed987...cba654", type: "Swap", amount: "100 WDYN → 98 dUSD", to: "DEX Router", time: "2026-04-03T09:30:00Z", status: "confirmed" },
-      ],
-      chain: GOLD_CHAIN,
-    })),
+    walletInfo: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      let userWallets: typeof wallets.$inferSelect[] = [];
+      if (db) {
+        userWallets = await db.select().from(wallets).where(eq(wallets.userId, ctx.user.id));
+      }
+      return {
+        addresses: userWallets.map(w => ({ label: w.name ?? "Wallet", address: w.address, type: "eoa" })),
+        portfolio: OFFICIAL_TOKENS.map(t => ({ ...t, balance: "0.00" })),
+        recentTx: [],
+        chain: GOLD_CHAIN,
+      };
+    }),
 
     teamContacts: protectedProcedure.query(() => ({
       team: [
-        { name: "Alessia Romano", role: "Account Manager", email: "a.romano@dyneros.com", status: "available", projects: ["PRJ-2026-0001", "PRJ-2026-0002"] },
-        { name: "Marco Ferretti", role: "Technical Lead", email: "m.ferretti@dyneros.com", status: "available", projects: ["PRJ-2026-0001", "PRJ-2026-0002", "PRJ-2026-0004"] },
-        { name: "Luca Bianchi", role: "Blockchain Specialist", email: "l.bianchi@dyneros.com", status: "busy", projects: ["PRJ-2026-0002"] },
-        { name: "Sara Conti", role: "DevOps Engineer", email: "s.conti@dyneros.com", status: "available", projects: ["PRJ-2026-0003"] },
-        { name: "Giulia Esposito", role: "AI Specialist", email: "g.esposito@dyneros.com", status: "available", projects: ["PRJ-2026-0004"] },
+        { name: "Alessia Romano", role: "Account Manager", email: "a.romano@dyneros.com", status: "available", projects: [] },
+        { name: "Marco Ferretti", role: "Technical Lead", email: "m.ferretti@dyneros.com", status: "available", projects: [] },
+        { name: "Luca Bianchi", role: "Blockchain Specialist", email: "l.bianchi@dyneros.com", status: "busy", projects: [] },
+        { name: "Sara Conti", role: "DevOps Engineer", email: "s.conti@dyneros.com", status: "available", projects: [] },
+        { name: "Giulia Esposito", role: "AI Specialist", email: "g.esposito@dyneros.com", status: "available", projects: [] },
         { name: "Riccardo Mancini", role: "Billing Contact", email: "billing@dyneros.com", status: "available", projects: [] },
       ],
     })),
 
-    domains: protectedProcedure.query(() => ({
-      domains: [
-        { domain: "dyneros.com", status: "active", ssl: "valid", hosting: "Dyneros Cloud", lastDeploy: "2026-04-01", environment: "production", uptime: 99.98 },
-        { domain: "app.dyneros.com", status: "active", ssl: "valid", hosting: "Dyneros Cloud", lastDeploy: "2026-04-03", environment: "production", uptime: 99.95 },
-        { domain: "staging.dyneros.com", status: "active", ssl: "valid", hosting: "Dyneros Cloud", lastDeploy: "2026-04-05", environment: "staging", uptime: 99.80 },
-        { domain: "docs.dyneros.com", status: "active", ssl: "valid", hosting: "Dyneros Cloud", lastDeploy: "2026-03-28", environment: "production", uptime: 100 },
-      ],
-      deployHistory: [
-        { id: "DEP-2026-0018", domain: "app.dyneros.com", version: "v2.4.1", status: "success", time: "2026-04-03T18:00:00Z", duration: "2m 34s" },
-        { id: "DEP-2026-0017", domain: "staging.dyneros.com", version: "v2.5.0-beta", status: "success", time: "2026-04-05T10:00:00Z", duration: "1m 58s" },
-        { id: "DEP-2026-0016", domain: "docs.dyneros.com", version: "v1.8.2", status: "success", time: "2026-03-28T14:30:00Z", duration: "45s" },
-      ],
-    })),
+    domains: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      let userDomains: typeof domains.$inferSelect[] = [];
+      if (db) {
+        userDomains = await db.select().from(domains).where(eq(domains.userId, ctx.user.id));
+      }
+      return {
+        domains: userDomains.map(d => ({
+          domain: d.domainName,
+          status: d.status,
+          ssl: d.sslStatus,
+          hosting: "Dyneros Cloud",
+          lastDeploy: d.createdAt.toISOString(),
+          environment: "production",
+          uptime: 99.98,
+        })),
+        deployHistory: [],
+      };
+    }),
 
-    aiProjects: protectedProcedure.query(() => ({
-      projects: [
-        { id: "AI-2026-0001", name: "Compliance Automation Agent", status: "in_development", environment: "staging", description: "Agente AI per automazione processi AML/KYC e compliance documentale.", lastUpdate: "2026-04-01" },
-        { id: "AI-2026-0002", name: "Smart Contract Analyzer", status: "delivered", environment: "production", description: "Sistema di analisi automatica degli smart contract per rilevamento vulnerabilità.", lastUpdate: "2026-03-15" },
-      ],
-    })),
+    aiProjects: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      let rows: typeof aiProjects.$inferSelect[] = [];
+      if (db) {
+        rows = await db.select().from(aiProjects).where(eq(aiProjects.userId, ctx.user.id)).orderBy(desc(aiProjects.createdAt));
+      }
+      return { projects: rows };
+    }),
 
-    securityInfo: protectedProcedure.query(({ ctx }) => ({
-      authMethod: "Manus OAuth",
-      twoFa: false,
-      activeSessions: [
-        { device: "Chrome / macOS", location: "Milano, IT", ip: "185.12.xx.xx", lastActive: new Date().toISOString(), current: true },
-        { device: "Safari / iPhone", location: "Roma, IT", ip: "151.38.xx.xx", lastActive: new Date(Date.now() - 3600000).toISOString(), current: false },
-      ],
-      securityLog: [
-        { event: "Login riuscito via Manus OAuth", ip: "185.12.xx.xx", time: new Date().toISOString(), severity: "low" },
-        { event: "Sessione terminata manualmente", ip: "151.38.xx.xx", time: new Date(Date.now() - 86400000).toISOString(), severity: "low" },
-        { event: "Tentativo di accesso fallito", ip: "91.108.xx.xx", time: new Date(Date.now() - 172800000).toISOString(), severity: "high" },
-      ],
-    })),
+    securityInfo: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      let auditRows: typeof auditLog.$inferSelect[] = [];
+      if (db) {
+        auditRows = await db.select().from(auditLog).where(eq(auditLog.userId, ctx.user.id)).orderBy(desc(auditLog.createdAt)).limit(10);
+      }
+      return {
+        authMethod: "Email / Password",
+        twoFa: false,
+        activeSessions: [
+          { device: "Browser attuale", location: "—", ip: "—", lastActive: new Date().toISOString(), current: true },
+        ],
+        securityLog: auditRows.map(r => ({
+          event: r.action,
+          ip: r.ipAddress ?? "—",
+          time: r.createdAt.toISOString(),
+          severity: "low",
+        })),
+      };
+    }),
 
-    apiKeys: protectedProcedure.query(() => ({
-      keys: [
-        { id: "key_prod_1", name: "Produzione — Backend", prefix: "dyn_live_", created: "2026-01-10", lastUsed: "2026-04-05", status: "active", permissions: ["read", "write", "blockchain"] },
-        { id: "key_stg_1", name: "Staging — Test", prefix: "dyn_test_", created: "2026-02-01", lastUsed: "2026-04-04", status: "active", permissions: ["read", "blockchain"] },
-      ],
-    })),
+    apiKeys: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { keys: [] };
+      const rows = await db.select({
+        id: apiKeys.id,
+        name: apiKeys.name,
+        keyPrefix: apiKeys.keyPrefix,
+        scopes: apiKeys.scopes,
+        lastUsedAt: apiKeys.lastUsedAt,
+        revokedAt: apiKeys.revokedAt,
+        createdAt: apiKeys.createdAt,
+      }).from(apiKeys).where(and(eq(apiKeys.userId, ctx.user.id), isNull(apiKeys.revokedAt))).orderBy(desc(apiKeys.createdAt));
+      return {
+        keys: rows.map(k => ({
+          id: String(k.id),
+          name: k.name,
+          prefix: k.keyPrefix,
+          created: k.createdAt.toISOString().slice(0, 10),
+          lastUsed: k.lastUsedAt?.toISOString().slice(0, 10) ?? "Mai",
+          status: "active",
+          permissions: k.scopes.split(","),
+        })),
+      };
+    }),
+
+    generateApiKey: protectedProcedure
+      .input(z.object({ name: z.string().min(2), scopes: z.array(z.string()).min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const { key, prefix, hash } = generateApiKey();
+        await db.insert(apiKeys).values({
+          userId: ctx.user.id,
+          name: input.name,
+          keyHash: hash,
+          keyPrefix: prefix,
+          scopes: input.scopes.join(","),
+        });
+        return { success: true, key };
+      }),
+
+    revokeApiKey: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(apiKeys).set({ revokedAt: new Date() }).where(and(eq(apiKeys.id, input.id), eq(apiKeys.userId, ctx.user.id)));
+        return { success: true };
+      }),
 
     knowledgeBase: protectedProcedure.query(() => ({
       articles: [
@@ -418,9 +629,74 @@ export const appRouter = router({
       ],
     })),
 
+    settings: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { language: "it", theme: "dark", notificationsEmail: true, notificationsTickets: true, notificationsInvoices: true, notificationsMilestones: true };
+      const rows = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id)).limit(1);
+      if (rows[0]) return rows[0];
+      await db.insert(userSettings).values({ userId: ctx.user.id }).catch(() => {});
+      return { language: "it" as const, theme: "dark" as const, notificationsEmail: true, notificationsTickets: true, notificationsInvoices: true, notificationsMilestones: true };
+    }),
+
+    updateSettings: protectedProcedure
+      .input(z.object({
+        language: z.enum(["it", "en"]).optional(),
+        theme: z.enum(["dark", "light"]).optional(),
+        notificationsEmail: z.boolean().optional(),
+        notificationsTickets: z.boolean().optional(),
+        notificationsInvoices: z.boolean().optional(),
+        notificationsMilestones: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const existing = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id)).limit(1);
+        if (existing.length === 0) {
+          await db.insert(userSettings).values({ userId: ctx.user.id, ...input });
+        } else {
+          await db.update(userSettings).set(input).where(eq(userSettings.userId, ctx.user.id));
+        }
+        return { success: true };
+      }),
+
+    updateProfile: protectedProcedure
+      .input(z.object({
+        name: z.string().min(2).optional(),
+        company: z.string().optional(),
+        phone: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(users).set(input).where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
+
+    changePassword: protectedProcedure
+      .input(z.object({ currentPassword: z.string(), newPassword: z.string().min(8) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const rows = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        const user = rows[0];
+        if (!user || !user.passwordHash) throw new Error("Utente non trovato");
+        const valid = await verifyPassword(input.currentPassword, user.passwordHash);
+        if (!valid) throw new Error("Password attuale non corretta");
+        const newHash = await hashPassword(input.newPassword);
+        await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, user.id));
+        await db.insert(auditLog).values({
+          userId: user.id,
+          action: "password_changed",
+          resource: "user",
+          resourceId: String(user.id),
+          ipAddress: "—",
+        });
+        return { success: true };
+      }),
+
     data: protectedProcedure.query(({ ctx }) => {
       const user = ctx.user;
-      const tier = user.role === "admin" ? "Enterprise" : "Business";
+      const tier = user.role === "admin" || user.role === "superadmin" ? "Enterprise" : "Business";
       return {
         user: { id: user.id, name: user.name, email: user.email, role: user.role },
         service: {
@@ -443,14 +719,14 @@ export const appRouter = router({
 
   email: router({
     verifySmtp: protectedProcedure.mutation(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") return { ok: false, error: "Accesso negato" };
+      if (ctx.user.role !== "admin" && ctx.user.role !== "superadmin") return { ok: false, error: "Accesso negato" };
       return verifySmtp();
     }),
 
     sendTest: protectedProcedure
       .input(z.object({ to: z.string().email() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") return { ok: false, error: "Accesso negato" };
+        if (ctx.user.role !== "admin" && ctx.user.role !== "superadmin") return { ok: false, error: "Accesso negato" };
         const tpl = templateCriticalAlert({
           clientName: ctx.user.name ?? "Utente",
           alertTitle: "Test Email Sistema Dyneros",
@@ -485,93 +761,44 @@ export const appRouter = router({
       }),
 
     sendNewTicket: protectedProcedure
-      .input(z.object({
-        to: z.string().email(),
-        clientName: z.string(),
-        ticketId: z.string(),
-        subject: z.string(),
-        priority: z.string(),
-        category: z.string(),
-      }))
+      .input(z.object({ to: z.string().email(), clientName: z.string(), ticketId: z.string(), subject: z.string(), priority: z.string(), category: z.string() }))
       .mutation(async ({ input }) => {
-        const tpl = templateNewTicket({ ...input, dashboardUrl: `https://dyneros.com/dashboard/tickets` });
+        const tpl = templateNewTicket({ ...input, dashboardUrl: "https://dyneros.com/dashboard/tickets" });
         return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
       }),
 
     sendTicketUpdate: protectedProcedure
-      .input(z.object({
-        to: z.string().email(),
-        clientName: z.string(),
-        ticketId: z.string(),
-        subject: z.string(),
-        status: z.string(),
-        message: z.string(),
-        author: z.string(),
-      }))
+      .input(z.object({ to: z.string().email(), clientName: z.string(), ticketId: z.string(), subject: z.string(), status: z.string(), message: z.string(), author: z.string() }))
       .mutation(async ({ input }) => {
-        const tpl = templateTicketUpdate({ ...input, dashboardUrl: `https://dyneros.com/dashboard/tickets` });
+        const tpl = templateTicketUpdate({ ...input, dashboardUrl: "https://dyneros.com/dashboard/tickets" });
         return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
       }),
 
     sendContractExpiry: protectedProcedure
-      .input(z.object({
-        to: z.string().email(),
-        clientName: z.string(),
-        contractName: z.string(),
-        contractId: z.string(),
-        expiryDate: z.string(),
-        daysLeft: z.number(),
-      }))
+      .input(z.object({ to: z.string().email(), clientName: z.string(), contractName: z.string(), contractId: z.string(), expiryDate: z.string(), daysLeft: z.number() }))
       .mutation(async ({ input }) => {
         const tpl = templateContractExpiry({ ...input, dashboardUrl: "https://dyneros.com/dashboard/contracts" });
         return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
       }),
 
     sendInvoiceOverdue: protectedProcedure
-      .input(z.object({
-        to: z.string().email(),
-        clientName: z.string(),
-        invoiceId: z.string(),
-        amount: z.number(),
-        currency: z.string(),
-        dueDate: z.string(),
-        description: z.string(),
-      }))
+      .input(z.object({ to: z.string().email(), clientName: z.string(), invoiceId: z.string(), amount: z.number(), currency: z.string(), dueDate: z.string(), description: z.string() }))
       .mutation(async ({ input }) => {
         const tpl = templateInvoiceOverdue({ ...input, dashboardUrl: "https://dyneros.com/dashboard/invoices" });
         return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
       }),
 
     sendMilestoneAlert: protectedProcedure
-      .input(z.object({
-        to: z.string().email(),
-        clientName: z.string(),
-        milestoneName: z.string(),
-        projectName: z.string(),
-        projectId: z.string(),
-        date: z.string(),
-        daysLeft: z.number(),
-      }))
+      .input(z.object({ to: z.string().email(), clientName: z.string(), milestoneName: z.string(), projectName: z.string(), projectId: z.string(), date: z.string(), daysLeft: z.number() }))
       .mutation(async ({ input }) => {
-        const tpl = templateMilestoneAlert({ ...input, dashboardUrl: `https://dyneros.com/dashboard/projects` });
+        const tpl = templateMilestoneAlert({ ...input, dashboardUrl: "https://dyneros.com/dashboard/projects" });
         return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
       }),
 
     sendCriticalAlert: protectedProcedure
-      .input(z.object({
-        to: z.string().email(),
-        clientName: z.string(),
-        alertTitle: z.string(),
-        alertMessage: z.string(),
-        severity: z.enum(["critical", "high"]),
-        affectedService: z.string(),
-      }))
+      .input(z.object({ to: z.string().email(), clientName: z.string(), alertTitle: z.string(), alertMessage: z.string(), severity: z.enum(["critical", "high"]), affectedService: z.string() }))
       .mutation(async ({ input }) => {
-        const tpl = templateCriticalAlert({
-          ...input,
-          timestamp: new Date().toLocaleString("it-IT"),
-          dashboardUrl: "https://dyneros.com/dashboard",
-        });
+        const tpl = templateCriticalAlert({ ...input, timestamp: new Date().toLocaleString("it-IT"), dashboardUrl: "https://dyneros.com/dashboard" });
         return sendEmail({ to: input.to, subject: tpl.subject, html: tpl.html });
       }),
 

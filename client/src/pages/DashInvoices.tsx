@@ -30,9 +30,9 @@ export default function DashInvoices() {
   const [filter, setFilter] = useState("all");
 
   const totalDue = invoices?.filter(i => i.status === "unpaid" || i.status === "overdue")
-    .reduce((s, i) => s + i.amount, 0) ?? 0;
+    .reduce((s, i) => s + parseFloat(i.amount), 0) ?? 0;
   const totalPaid = invoices?.filter(i => i.status === "paid")
-    .reduce((s, i) => s + i.amount, 0) ?? 0;
+    .reduce((s, i) => s + parseFloat(i.amount), 0) ?? 0;
   const overdueCount = invoices?.filter(i => i.status === "overdue").length ?? 0;
 
   const filtered = invoices?.filter(i => filter === "all" || i.status === filter) ?? [];
@@ -106,19 +106,19 @@ export default function DashInvoices() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className="text-xs font-mono text-muted-foreground">{inv.id}</span>
+                    <span className="text-xs font-mono text-muted-foreground">{inv.invoiceNumber}</span>
                     <Badge color={STATUS_COLORS[inv.status] || "oklch(55% 0.05 264)"} label={STATUS_LABELS[inv.status] || inv.status} />
                   </div>
-                  <p className="text-sm font-medium truncate">{inv.description}</p>
+                  <p className="text-sm font-medium truncate">{inv.description ?? inv.invoiceNumber}</p>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                    <span>Emessa: {inv.issued}</span>
+                    <span>Emessa: {new Date(inv.issued).toLocaleDateString("it-IT")}</span>
                     <span>·</span>
-                    <span>Scadenza: {inv.due}</span>
+                    <span>Scadenza: {new Date(inv.due).toLocaleDateString("it-IT")}</span>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-base font-semibold" style={inv.status === "paid" ? { color: "oklch(60% 0.18 145)" } : inv.status === "overdue" ? { color: "oklch(55% 0.22 25)" } : { color: GOLD }}>
-                    €{inv.amount.toLocaleString("it-IT")}
+                    €{parseFloat(inv.amount).toLocaleString("it-IT", { minimumFractionDigits: 2 })}
                   </p>
                   <button className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto">
                     <Download className="h-3 w-3" />

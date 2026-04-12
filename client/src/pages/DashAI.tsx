@@ -53,11 +53,10 @@ export default function DashAI() {
                         {STATUS_LABELS[project.status] || project.status}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{project.description}</p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span>Ambiente: {project.environment}</span>
                       <span>·</span>
-                      <span>Aggiornato: {project.lastUpdate}</span>
+                      <span>Creato: {new Date(project.createdAt).toLocaleDateString("it-IT")}</span>
                     </div>
                   </div>
                 </div>

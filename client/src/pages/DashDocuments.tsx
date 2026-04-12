@@ -83,7 +83,7 @@ export default function DashDocuments() {
                 style={{ background: CARD_BG, borderColor: BORDER }}>
                 <div className="h-10 w-10 rounded-lg flex items-center justify-center text-xl shrink-0"
                   style={{ background: "oklch(15% 0.008 264)" }}>
-                  {TYPE_ICONS[doc.type] || "📄"}
+                  {TYPE_ICONS[doc.type ?? "other"] ?? "📄"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
@@ -93,11 +93,9 @@ export default function DashDocuments() {
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span>{doc.category}</span>
                     <span>·</span>
-                    <span>{doc.size}</span>
+                    <span>{doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : "—"}</span>
                     <span>·</span>
-                    <span>{doc.author}</span>
-                    <span>·</span>
-                    <span>{doc.uploaded}</span>
+                    <span>{new Date(doc.createdAt).toLocaleDateString("it-IT")}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

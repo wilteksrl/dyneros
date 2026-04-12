@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const navLinks = [
   { label: "Chain", href: "#chain" },
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const [location] = useLocation();
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -87,6 +89,15 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Language switcher */}
+            <button
+              onClick={() => setLanguage(language === "it" ? "en" : "it")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[oklch(65%_0.010_264)] hover:text-[oklch(95%_0.005_264)] border border-[oklch(25%_0.008_264)] hover:border-[oklch(68%_0.19_72)] rounded-md transition-all"
+              title={language === "it" ? "Switch to English" : "Passa all'italiano"}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>{language === "it" ? "IT" : "EN"}</span>
+            </button>
             {isAuthenticated ? (
               <Link href="/dashboard">
                 <Button

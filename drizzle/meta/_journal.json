@@ -8,6 +8,13 @@
       "when": 1775626800000,
       "tag": "0000_dyneros_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1776020019905,
+      "tag": "0001_skinny_la_nuit",
+      "breakpoints": true
     }
   ]
 }

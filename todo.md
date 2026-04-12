@@ -135,8 +135,81 @@
 - [x] Rimuovere VITE_ANALYTICS_ENDPOINT e VITE_ANALYTICS_WEBSITE_ID da index.html
 
 ## Fix MariaDB / Drizzle Migration
-- [ ] Fix drizzle.config.ts: dialect mysql, DATABASE_URL corretto
-- [ ] Eliminare vecchie migrazioni in /drizzle/migrations/
-- [ ] Rigenerare migrazioni da zero con drizzle-kit generate
-- [ ] Verificare schema con tutte le 19 colonne
-- [ ] ZIP con file direttamente alla radice (senza home/ubuntu)
+- [x] Fix drizzle.config.ts: dialect mysql, DATABASE_URL corretto
+- [x] Eliminare vecchie migrazioni in /drizzle/migrations/
+- [x] Rigenerare migrazioni da zero con drizzle-kit generate
+- [x] Verificare schema con tutte le 19 colonne
+- [x] ZIP con file direttamente alla radice (senza home/ubuntu)
+
+## Implementazione Completa v7 (MANUS_PROMPT_COMPLETO)
+
+### Database Schema (13 nuove tabelle)
+- [ ] projects table
+- [ ] tickets table
+- [ ] ticket_replies table
+- [ ] invoices table
+- [ ] contracts table
+- [ ] documents table
+- [ ] wallets table
+- [ ] smart_contracts table
+- [ ] domains table
+- [ ] ai_projects table
+- [ ] notifications table
+- [ ] user_settings table
+- [ ] api_keys table
+- [ ] audit_log table
+- [ ] pnpm db:push con nuove tabelle
+
+### Utility Helpers
+- [ ] client/src/lib/formatters.ts
+- [ ] client/src/lib/i18n.ts (translations IT+EN)
+- [ ] client/src/contexts/LanguageContext.tsx
+- [ ] server/_core/i18n-emails.ts
+
+### tRPC Procedures (complete)
+- [ ] projects: list, create, updateStatus
+- [ ] tickets: list, addReply, updateStatus
+- [ ] invoices: list, downloadPDF, sendReminder
+- [ ] contracts: list, trackExpiry
+- [ ] documents: list, upload, delete
+- [ ] wallets: list, generateAddress, getBalances
+- [ ] smartContracts: list, getABI
+- [ ] domains: list, checkSSL
+- [ ] aiProjects: list
+- [ ] notifications: list, markAsRead, markAllRead
+- [ ] settings: get, update
+- [ ] security: getActiveSessions, revokeSession, getAuditLog
+- [ ] apiKeys: list, generate, revoke
+
+### Dashboard Pages (logica completa)
+- [ ] DashProjects: filtri, ricerca, paginazione, dettaglio
+- [ ] DashTickets: thread replies, SLA tracking, filtri
+- [ ] DashInvoices: filtri stato, PDF download, reminder
+- [ ] DashContracts: expiry tracking, filtri
+- [ ] DashDocuments: upload, categorie, preview modale
+- [ ] DashBlockchain: chain info, tokens, copy clipboard
+- [ ] DashWallet: address generation, balances
+- [ ] DashSmartContracts: ABI viewer, verified badge
+- [ ] DashDomains: SSL status, DNS records
+- [ ] DashAI: metriche, environment toggle
+- [ ] DashTeam: lista team, ruoli
+- [ ] DashNotifications: timeline, mark read, filtri
+- [ ] DashSettings: profilo, preferenze, lingua, tema
+- [ ] DashSecurity: sessioni attive, audit log paginato
+- [ ] DashApiKeys: genera, revoca, usage tracking
+- [ ] DashKnowledgeBase: articoli, FAQ, ricerca
+
+### i18n
+- [ ] Selector lingua IT/EN in Navbar
+- [ ] Selector lingua in DashboardLayout topbar
+
+### SuperAdmin Panel (tabs completi)
+- [ ] Tab Users Management
+- [ ] Tab System Statistics
+- [ ] Tab Email Management
+- [ ] Tab Security
+- [ ] Tab Maintenance
+
+### Testing
+- [ ] server/formatters.test.ts
+- [ ] TypeScript check 0 errori

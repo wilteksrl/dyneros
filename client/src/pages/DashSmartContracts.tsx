@@ -84,7 +84,7 @@ export default function DashSmartContracts() {
                           {contract.status}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{contract.network} · Deploy: {contract.deployDate}</p>
+                      <p className="text-xs text-muted-foreground">{contract.network} · Deploy: {contract.deployDate ? new Date(contract.deployDate).toLocaleDateString("it-IT") : "—"}</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-mono text-muted-foreground shrink-0">{contract.id}</span>
@@ -100,9 +100,7 @@ export default function DashSmartContracts() {
                   </a>
                 </div>
 
-                {contract.relatedToken && (
-                  <p className="text-xs text-muted-foreground mt-2">Token correlato: <span style={{ color: GOLD }}>{contract.relatedToken}</span></p>
-                )}
+
               </div>
             ))}
           </div>

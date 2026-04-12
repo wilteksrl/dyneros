@@ -46,8 +46,9 @@ function Badge({ color, label }: { color: string; label: string }) {
 }
 
 type Project = {
-  id: string; name: string; type: string; status: string; priority: string;
-  startDate: string; eta: string; environment: string; stack: string[]; progress: number;
+  id: number; name: string; type: string; status: string; priority: string;
+  startDate: Date | null; eta: Date | null; environment: string; stack?: string[]; progress: number;
+  description?: string | null; createdAt: Date;
 };
 
 function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
@@ -62,7 +63,7 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-[10px] font-mono text-muted-foreground">{project.id}</span>
+            <span className="text-[10px] font-mono text-muted-foreground">#{project.id}</span>
             <Badge color={sc} label={STATUS_LABELS[project.status] || project.status} />
             <Badge color={pc} label={PRIORITY_LABELS[project.priority] || project.priority} />
           </div>
@@ -88,10 +89,10 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Calendar className="h-3 w-3" />
-          <span>ETA: {project.eta}</span>
+          <span>ETA: {project.eta ? new Date(project.eta).toLocaleDateString("it-IT") : "—"}</span>
         </div>
         <div className="flex gap-1 flex-wrap justify-end">
-          {project.stack.slice(0, 3).map(s => (
+          {(project.stack ?? []).slice(0, 3).map(s => (
             <span key={s} className="px-1.5 py-0.5 rounded text-[10px] bg-[oklch(15%_0.008_264)]">{s}</span>
           ))}
         </div>
@@ -100,29 +101,35 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
   );
 }
 
-function ProjectDetail({ id, onClose }: { id: string; onClose: () => void }) {
-  const { data, isLoading } = trpc.dashboard.projectDetail.useQuery({ id });
+function ProjectDetail({ id, onClose }: { id: number; onClose: () => void }) {
+  const { data, isLoading } = trpc.dashboard.projects.useQuery();
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
       <Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} />
     </div>
   );
-  if (!data) return null;
+  const project = Array.isArray(data) ? data.find(p => p.id === id) : null;
+  if (!project) return (
+    <div className="text-center py-12 text-muted-foreground">
+      <p>Progetto non trovato</p>
+      <button onClick={onClose} className="mt-4 text-sm text-[oklch(68%_0.19_72)] hover:underline">Torna ai Progetti</button>
+    </div>
+  );
 
-  const sc = STATUS_COLORS[data.status] || "oklch(55% 0.05 264)";
-  const pc = PRIORITY_COLORS[data.priority] || GOLD;
+  const sc = STATUS_COLORS[project.status] || "oklch(55% 0.05 264)";
+  const pc = PRIORITY_COLORS[project.priority] || GOLD;
 
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-xs font-mono text-muted-foreground">{data.id}</span>
-            <Badge color={sc} label={STATUS_LABELS[data.status] || data.status} />
-            <Badge color={pc} label={PRIORITY_LABELS[data.priority] || data.priority} />
+            <span className="text-xs font-mono text-muted-foreground">#{project.id}</span>
+            <Badge color={sc} label={STATUS_LABELS[project.status] || project.status} />
+            <Badge color={pc} label={PRIORITY_LABELS[project.priority] || project.priority} />
           </div>
-          <h2 className="text-lg font-semibold">{data.name}</h2>
-          <p className="text-sm text-muted-foreground">{TYPE_LABELS[data.type] || data.type} · {data.environment}</p>
+          <h2 className="text-lg font-semibold">{project.name}</h2>
+          <p className="text-sm text-muted-foreground">{TYPE_LABELS[project.type] || project.type} · {project.environment}</p>
         </div>
         <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors">
           <X className="h-4 w-4" />
@@ -132,81 +139,34 @@ function ProjectDetail({ id, onClose }: { id: string; onClose: () => void }) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-muted-foreground">Avanzamento globale</span>
-          <span className="text-sm font-semibold" style={{ color: GOLD }}>{data.progress}%</span>
+          <span className="text-sm font-semibold" style={{ color: GOLD }}>{project.progress}%</span>
         </div>
         <div className="h-2 rounded-full bg-[oklch(18%_0.008_264)] overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${data.progress}%`, background: GOLD }} />
+          <div className="h-full rounded-full" style={{ width: `${project.progress}%`, background: GOLD }} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg p-3" style={{ background: "oklch(12% 0.006 264)", border: `1px solid ${BORDER}` }}>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Data Inizio</p>
-          <p className="text-sm font-medium">{data.startDate}</p>
+          <p className="text-sm font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString("it-IT") : "—"}</p>
         </div>
         <div className="rounded-lg p-3" style={{ background: "oklch(12% 0.006 264)", border: `1px solid ${BORDER}` }}>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">ETA Consegna</p>
-          <p className="text-sm font-medium">{data.eta}</p>
+          <p className="text-sm font-medium">{project.eta ? new Date(project.eta).toLocaleDateString("it-IT") : "—"}</p>
         </div>
       </div>
 
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Milestone</h3>
-        <div className="space-y-2">
-          {data.milestones.map((m) => {
-            const mc = m.status === "completed" ? "oklch(60% 0.18 145)" : m.status === "in_progress" ? GOLD : "oklch(40% 0.005 264)";
-            return (
-              <div key={m.id} className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "oklch(12% 0.006 264)" }}>
-                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: mc }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">{m.name}</p>
-                  <p className="text-xs text-muted-foreground">{m.date}</p>
-                </div>
-                <Badge color={mc} label={STATUS_LABELS[m.status] || m.status} />
-              </div>
-            );
-          })}
+      {project.description && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Descrizione</h3>
+          <p className="text-sm text-muted-foreground">{project.description}</p>
         </div>
-      </div>
+      )}
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Team Assegnato</h3>
-        <div className="flex flex-wrap gap-2">
-          {data.team.map((member) => (
-            <div key={member.name} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "oklch(12% 0.006 264)", border: `1px solid ${BORDER}` }}>
-              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-                style={{ background: GOLD_DIM, color: GOLD }}>{member.avatar}</div>
-              <div>
-                <p className="text-xs font-medium">{member.name}</p>
-                <p className="text-[10px] text-muted-foreground">{member.role}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Attività Recenti</h3>
-        <div className="space-y-2">
-          {data.recentActivity.map((a, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <div className="h-1.5 w-1.5 rounded-full mt-2 shrink-0" style={{ background: GOLD }} />
-              <div>
-                <p className="text-sm">{a.text}</p>
-                <p className="text-xs text-muted-foreground">{a.time}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Stack Tecnologico</h3>
-        <div className="flex flex-wrap gap-2">
-          {data.stack.map(s => (
-            <span key={s} className="px-2.5 py-1 rounded-lg text-xs bg-[oklch(15%_0.008_264)]">{s}</span>
-          ))}
-        </div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Creato il</h3>
+        <p className="text-sm">{new Date(project.createdAt).toLocaleDateString("it-IT")}</p>
       </div>
     </div>
   );
@@ -214,7 +174,7 @@ function ProjectDetail({ id, onClose }: { id: string; onClose: () => void }) {
 
 export default function DashProjects() {
   const { data: projects, isLoading } = trpc.dashboard.projects.useQuery();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filter, setFilter] = useState("all");
 
   const filters = [
@@ -274,7 +234,7 @@ export default function DashProjects() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map(p => (
-                  <ProjectCard key={p.id} project={p} onClick={() => setSelectedId(p.id)} />
+                  <ProjectCard key={p.id} project={p as Project} onClick={() => setSelectedId(p.id)} />
                 ))}
               </div>
             )}

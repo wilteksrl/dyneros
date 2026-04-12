@@ -83,22 +83,26 @@ export default function DashDomains() {
             <Server className="h-4 w-4" style={{ color: GOLD }} />
             Storico Deploy
           </h2>
-          <div className="space-y-2">
-            {data.deployHistory.map(dep => (
-              <div key={dep.id} className="flex items-center gap-4 p-3 rounded-lg"
-                style={{ background: "oklch(13% 0.006 264)", border: `1px solid ${BORDER}` }}>
-                <div className="h-2 w-2 rounded-full shrink-0" style={{ background: dep.status === "success" ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)" }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-mono">{dep.domain}</p>
-                    <span className="text-xs text-muted-foreground">{dep.version}</span>
+          {data.deployHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Nessun deploy registrato</p>
+          ) : (
+            <div className="space-y-2">
+              {(data.deployHistory as Array<{ id: string; domain: string; version: string; status: string; time: string; duration: string }>).map(dep => (
+                <div key={dep.id} className="flex items-center gap-4 p-3 rounded-lg"
+                  style={{ background: "oklch(13% 0.006 264)", border: `1px solid ${BORDER}` }}>
+                  <div className="h-2 w-2 rounded-full shrink-0" style={{ background: dep.status === "success" ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)" }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-mono">{dep.domain}</p>
+                      <span className="text-xs text-muted-foreground">{dep.version}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{new Date(dep.time).toLocaleString("it-IT")} · Durata: {dep.duration}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{new Date(dep.time).toLocaleString("it-IT")} · Durata: {dep.duration}</p>
+                  <span className="text-[10px] font-mono text-muted-foreground shrink-0">{dep.id}</span>
                 </div>
-                <span className="text-[10px] font-mono text-muted-foreground shrink-0">{dep.id}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
