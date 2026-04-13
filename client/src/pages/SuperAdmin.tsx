@@ -30,7 +30,7 @@ export default function SuperAdmin() {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [testEmailTo, setTestEmailTo] = useState("");
   const [smtpResult, setSmtpResult] = useState<{ ok: boolean; error?: string } | null>(null);
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const updateRole = trpc.superadmin.updateUserRole.useMutation({
     onSuccess: () => { refetch(); refetchStats(); toast.success("Ruolo aggiornato"); },
@@ -357,12 +357,12 @@ export default function SuperAdmin() {
                 <AlertTriangle className="h-5 w-5" style={{ color: "oklch(65% 0.22 25)" }} />
               </div>
               <div>
-                <h3 className="font-semibold">Elimina utente</h3>
-                <p className="text-xs text-muted-foreground">Questa azione è irreversibile</p>
+                <h3 className="font-semibold">{t("admin.delete_user")}</h3>
+                <p className="text-xs text-muted-foreground">{t("admin.irreversible")}</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              Sei sicuro di voler eliminare definitivamente questo utente? Tutti i suoi dati verranno rimossi.
+              {t("admin.delete_confirm_msg")}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDelete(null)}

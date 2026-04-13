@@ -229,7 +229,7 @@
 - [x] Tradurre Navbar (desktop + mobile)
 - [x] Tradurre Home (HeroSection, TrustBar, ChainSection, PlatformSection, SolutionsSection, ServicesSection, DevelopersSection, CaseStudiesSection, PricingSection, SupportSection, CompanySection, Footer)
 - [x] Tradurre DashboardLayout sidebar + topbar (tutti i label con t())
-- [ ] Tradurre tutte le 16 pagine dashboard
+- [x] Tradurre tutte le 18 pagine dashboard (Dashboard, DashProjects, DashTickets, DashInvoices, DashContracts, DashDocuments, DashBlockchain, DashWallet, DashSmartContracts, DashDomains, DashAI, DashTeam, DashNotifications, DashSettings, DashSecurity, DashApiKeys, DashKnowledgeBase, DashEmailSettings)
 - [x] Tradurre Login, Register, ForgotPassword, ResetPassword, VerifyEmail
 - [x] TypeScript 0 errori
-- [ ] ZIP pronto per public_html
+- [x] ZIP pronto per public_html (dyneros-complete-final.zip, 397K, senza node_modules)

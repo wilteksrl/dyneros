@@ -77,7 +77,7 @@ export default function DashBlockchain() {
             <StatCard label={t("blockchain.block_height")} value={netStatus.blockHeight.toLocaleString()} accent />
             <StatCard label="TPS" value={`${netStatus.tps} tx/s`} />
             <StatCard label="Uptime" value={`${netStatus.uptime}%`} />
-            <StatCard label="Finalità" value="Immediata" />
+            <StatCard label={t("blockchain.finality")} value={t("blockchain.immediate")} />
           </div>
         )}
 

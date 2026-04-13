@@ -9,8 +9,9 @@ const BORDER = "oklch(20% 0.008 264)";
 const CARD_BG = "oklch(10% 0.006 264)";
 
 const CAT_COLORS: Record<string, string> = {
-  Blockchain: "oklch(60% 0.18 300)", Sviluppo: "oklch(55% 0.18 220)", Supporto: GOLD,
-  Billing: "oklch(60% 0.18 145)", Sicurezza: "oklch(55% 0.22 25)", Generale: "oklch(55% 0.05 264)",
+  Blockchain: "oklch(60% 0.18 300)", Development: "oklch(55% 0.18 220)", Support: GOLD,
+  Billing: "oklch(60% 0.18 145)", Security: "oklch(55% 0.22 25)", General: "oklch(55% 0.05 264)",
+  Sviluppo: "oklch(55% 0.18 220)", Supporto: GOLD, Sicurezza: "oklch(55% 0.22 25)", Generale: "oklch(55% 0.05 264)",
 };
 
 export default function DashKnowledgeBase() {
@@ -30,7 +31,7 @@ export default function DashKnowledgeBase() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-xl font-semibold">Knowledge Base</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Guide, tutorial e documentazione tecnica Dyneros</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("kb.subtitle")}</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -84,7 +85,7 @@ export default function DashKnowledgeBase() {
                           style={{ background: `${cc}12`, color: cc }}>
                           {article.category}
                         </span>
-                        <span>{article.views.toLocaleString("it-IT")} visualizzazioni</span>
+                        <span>{article.views.toLocaleString()} {t("kb.views")}</span>
                         <span>·</span>
                         <span>{article.updated}</span>
                       </div>
@@ -96,21 +97,21 @@ export default function DashKnowledgeBase() {
             {filtered.length === 0 && (
               <div className="col-span-2 text-center py-16 text-muted-foreground">
                 <BookOpen className="h-8 w-8 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Nessun articolo trovato</p>
+                <p className="text-sm">{t("kb.empty")}</p>
               </div>
             )}
           </div>
         )}
 
         <div className="rounded-xl border p-5" style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.15)" }}>
-          <h2 className="text-sm font-semibold mb-2">Non hai trovato quello che cercavi?</h2>
+          <h2 className="text-sm font-semibold mb-2">{t("kb.not_found_title")}</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Apri un ticket di supporto e il nostro team tecnico risponderà entro le SLA contrattuali.
+            {t("kb.support_hint")}
           </p>
           <a href="/dashboard/tickets"
             className="inline-flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium transition-colors"
             style={{ background: GOLD, color: "#000" }}>
-            Apri Ticket
+            {t("kb.open_ticket")}
           </a>
         </div>
       </div>
