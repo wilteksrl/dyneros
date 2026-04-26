@@ -233,3 +233,19 @@
 - [x] Tradurre Login, Register, ForgotPassword, ResetPassword, VerifyEmail
 - [x] TypeScript 0 errori
 - [x] ZIP pronto per public_html (dyneros-complete-final.zip, 397K, senza node_modules)
+
+## Modulo Affiliazione (Nuovo)
+- [ ] 6 tabelle Drizzle: affiliate_profiles, affiliate_clicks, affiliate_leads, affiliate_conversions, affiliate_payouts, affiliate_agreements
+- [ ] pnpm db:push con nuove tabelle affiliazione
+- [ ] server/routers/affiliate.ts con tutte le procedure tRPC
+- [ ] Pagina pubblica /affiliazione (hero, programma, commissioni, FAQ, CTA)
+- [ ] AffiliateApply.tsx — form richiesta affiliato
+- [ ] SubAffiliateApply.tsx — form richiesta sub affiliato
+- [ ] Tracking referral: ?ref=CODE e ?subref=CODE, cookie 90 giorni, last-click-wins
+- [ ] DashAffiliate.tsx — dashboard affiliato autenticata
+- [ ] SuperAdmin: tab Affiliati (lista, approva/rifiuta, payout, CSV export)
+- [ ] App.tsx: nuove route /affiliazione, /affiliazione/apply, /affiliazione/sub-apply, /dashboard/affiliate
+- [ ] DashboardLayout: voce sidebar Affiliazione
+- [ ] LanguageContext: chiavi IT+EN per modulo affiliazione
+- [ ] TypeScript 0 errori
+- [ ] ZIP diff-only con solo file nuovi/modificati

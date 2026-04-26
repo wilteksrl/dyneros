@@ -31,6 +31,10 @@ import DashApiKeys from "./pages/DashApiKeys";
 import DashKnowledgeBase from "./pages/DashKnowledgeBase";
 import DashEmailSettings from "./pages/DashEmailSettings";
 import Register from "./pages/Register";
+import Affiliazione from "./pages/Affiliazione";
+import AffiliateApply from "./pages/AffiliateApply";
+import SubAffiliateApply from "./pages/SubAffiliateApply";
+import DashAffiliate from "./pages/DashAffiliate";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SuperAdmin from "./pages/SuperAdmin";
@@ -64,6 +68,10 @@ function Router() {
       <Route path="/dashboard/api-keys" component={DashApiKeys} />
       <Route path="/dashboard/knowledge-base" component={DashKnowledgeBase} />
       <Route path="/dashboard/email-settings" component={DashEmailSettings} />
+      <Route path="/dashboard/affiliate" component={DashAffiliate} />
+      <Route path="/affiliazione" component={Affiliazione} />
+      <Route path="/affiliazione/candidatura" component={AffiliateApply} />
+      <Route path="/affiliazione/sub-affiliato" component={SubAffiliateApply} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/cookie-policy" component={CookiePolicy} />
       <Route path="/terms" component={Terms} />

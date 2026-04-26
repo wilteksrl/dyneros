@@ -302,3 +302,131 @@ export const ticketRepliesRelations = relations(ticketReplies, ({ one }) => ({
   ticket: one(tickets, { fields: [ticketReplies.ticketId], references: [tickets.id] }),
   user: one(users, { fields: [ticketReplies.userId], references: [users.id] }),
 }));
+
+export const affiliateProfiles = mysqlTable("affiliate_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  type: mysqlEnum("type", ["affiliate", "sub_affiliate"]).notNull(),
+  status: mysqlEnum("status", ["pending", "active", "suspended", "rejected"]).default("pending").notNull(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  companyName: varchar("companyName", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }),
+  taxId: varchar("taxId", { length: 50 }),
+  vatNumber: varchar("vatNumber", { length: 50 }),
+  website: varchar("website", { length: 500 }),
+  country: varchar("country", { length: 100 }),
+  promoChannels: text("promoChannels"),
+  paymentMethod: mysqlEnum("paymentMethod", ["bank", "paypal", "dyn", "usdt", "usdc", "btc", "eth"]).default("bank").notNull(),
+  iban: varchar("iban", { length: 50 }),
+  walletAddress: varchar("walletAddress", { length: 100 }),
+  affiliateCode: varchar("affiliateCode", { length: 30 }).notNull().unique(),
+  parentAffiliateId: int("parentAffiliateId"),
+  referralUrl: varchar("referralUrl", { length: 500 }),
+  notes: text("notes"),
+  approvedAt: timestamp("approvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  emailIdx: index("aff_email_idx").on(t.email),
+  codeIdx: index("aff_code_idx").on(t.affiliateCode),
+  parentIdx: index("aff_parent_idx").on(t.parentAffiliateId),
+  statusIdx: index("aff_status_idx").on(t.status),
+}));
+export type AffiliateProfile = typeof affiliateProfiles.$inferSelect;
+
+export const affiliateClicks = mysqlTable("affiliate_clicks", {
+  id: int("id").autoincrement().primaryKey(),
+  affiliateId: int("affiliateId"),
+  subAffiliateId: int("subAffiliateId"),
+  codeUsed: varchar("codeUsed", { length: 30 }).notNull(),
+  landingPage: varchar("landingPage", { length: 500 }).notNull(),
+  refType: mysqlEnum("refType", ["affiliate", "sub_affiliate"]).notNull(),
+  ipHash: varchar("ipHash", { length: 64 }).notNull(),
+  userAgent: text("userAgent"),
+  utmSource: varchar("utmSource", { length: 100 }),
+  utmMedium: varchar("utmMedium", { length: 100 }),
+  utmCampaign: varchar("utmCampaign", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  affIdx: index("click_aff_idx").on(t.affiliateId),
+  subIdx: index("click_sub_idx").on(t.subAffiliateId),
+  codeIdx: index("click_code_idx").on(t.codeUsed),
+}));
+export type AffiliateClick = typeof affiliateClicks.$inferSelect;
+
+export const affiliateLeads = mysqlTable("affiliate_leads", {
+  id: int("id").autoincrement().primaryKey(),
+  affiliateId: int("affiliateId"),
+  subAffiliateId: int("subAffiliateId"),
+  source: mysqlEnum("source", ["contact_form", "manual", "crm", "api"]).default("contact_form").notNull(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  companyName: varchar("companyName", { length: 255 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  serviceCategory: varchar("serviceCategory", { length: 100 }),
+  estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
+  status: mysqlEnum("status", ["new", "qualified", "proposal", "won", "lost", "invalid"]).default("new").notNull(),
+  attributionWindowEndsAt: timestamp("attributionWindowEndsAt").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  affIdx: index("lead_aff_idx").on(t.affiliateId),
+  subIdx: index("lead_sub_idx").on(t.subAffiliateId),
+  statusIdx: index("lead_status_idx").on(t.status),
+}));
+export type AffiliateLead = typeof affiliateLeads.$inferSelect;
+
+export const affiliateConversions = mysqlTable("affiliate_conversions", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  affiliateId: int("affiliateId"),
+  subAffiliateId: int("subAffiliateId"),
+  contractValueNet: decimal("contractValueNet", { precision: 12, scale: 2 }).notNull(),
+  serviceCategory: varchar("serviceCategory", { length: 100 }).notNull(),
+  commissionRate: decimal("commissionRate", { precision: 5, scale: 2 }).notNull(),
+  commissionAmount: decimal("commissionAmount", { precision: 12, scale: 2 }).notNull(),
+  parentOverrideRate: decimal("parentOverrideRate", { precision: 5, scale: 2 }).default("50.00").notNull(),
+  parentOverrideAmount: decimal("parentOverrideAmount", { precision: 12, scale: 2 }),
+  recurrenceType: mysqlEnum("recurrenceType", ["one_time", "monthly", "annual"]).default("one_time").notNull(),
+  recurrenceMonths: int("recurrenceMonths"),
+  status: mysqlEnum("status", ["pending", "approved", "invoiced", "paid", "rejected", "cancelled"]).default("pending").notNull(),
+  convertedAt: timestamp("convertedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  affIdx: index("conv_aff_idx").on(t.affiliateId),
+  subIdx: index("conv_sub_idx").on(t.subAffiliateId),
+  statusIdx: index("conv_status_idx").on(t.status),
+  leadIdx: index("conv_lead_idx").on(t.leadId),
+}));
+export type AffiliateConversion = typeof affiliateConversions.$inferSelect;
+
+export const affiliatePayouts = mysqlTable("affiliate_payouts", {
+  id: int("id").autoincrement().primaryKey(),
+  affiliateProfileId: int("affiliateProfileId").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).default("EUR").notNull(),
+  method: mysqlEnum("method", ["bank", "paypal", "crypto"]).notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "paid", "failed", "cancelled"]).default("pending").notNull(),
+  reference: varchar("reference", { length: 255 }),
+  paidAt: timestamp("paidAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  affIdx: index("payout_aff_idx").on(t.affiliateProfileId),
+  statusIdx: index("payout_status_idx").on(t.status),
+}));
+export type AffiliatePayout = typeof affiliatePayouts.$inferSelect;
+
+export const affiliateAgreements = mysqlTable("affiliate_agreements", {
+  id: int("id").autoincrement().primaryKey(),
+  affiliateProfileId: int("affiliateProfileId").notNull(),
+  agreementVersion: varchar("agreementVersion", { length: 20 }).default("1.0").notNull(),
+  acceptedAt: timestamp("acceptedAt").defaultNow().notNull(),
+  ipHash: varchar("ipHash", { length: 64 }).notNull(),
+  documentUrl: varchar("documentUrl", { length: 500 }),
+}, (t) => ({
+  affIdx: index("agree_aff_idx").on(t.affiliateProfileId),
+}));
+export type AffiliateAgreement = typeof affiliateAgreements.$inferSelect;

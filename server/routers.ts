@@ -1,4 +1,5 @@
 import { systemRouter } from "./_core/systemRouter";
+import { affiliateRouter } from "./affiliate";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { eq, and, desc, asc, count, sql, isNull } from "drizzle-orm";
@@ -52,6 +53,7 @@ function generateApiKey(): { key: string; prefix: string; hash: string } {
 
 export const appRouter = router({
   system: systemRouter,
+  affiliate: affiliateRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

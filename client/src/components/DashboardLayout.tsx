@@ -45,6 +45,7 @@ import {
   Ticket,
   Users,
   Wallet,
+  Share2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -97,6 +98,7 @@ const menuGroups = [
       { icon: Shield, labelKey: "dash.security", path: "/dashboard/security" },
       { icon: Key, labelKey: "dash.nav.apikeys", path: "/dashboard/api-keys" },
       { icon: Mail, labelKey: "dash.nav.email", path: "/dashboard/email-settings" },
+      { icon: Share2, labelKey: "dash.nav.affiliate", path: "/dashboard/affiliate" },
     ],
   },
 ];

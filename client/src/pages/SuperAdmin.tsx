@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import {
   AlertTriangle, CheckCircle, Crown, Globe, Loader2, LogOut, Mail, Search,
-  Server, Shield, Trash2, UserCheck, UserX, Users, Send, CheckCircle2
+  Server, Shield, Trash2, UserCheck, UserX, Users, Send, CheckCircle2,
+  Award, DollarSign, Check, X, Wallet
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ const ROLE_COLORS: Record<string, string> = {
   superadmin: "oklch(75% 0.22 30)",
 };
 
-type Tab = "users" | "email" | "system";
+type Tab = "users" | "email" | "system" | "affiliates";
 
 export default function SuperAdmin() {
   const [, setLocation] = useLocation();
@@ -28,6 +29,24 @@ export default function SuperAdmin() {
   const { data: users, isLoading, refetch } = trpc.superadmin.listUsers.useQuery(undefined, { enabled: me?.role === "superadmin" });
   const [search, setSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [affFilter, setAffFilter] = useState<"all" | "pending" | "active" | "rejected">("pending");
+  const [affSearch, setAffSearch] = useState("");
+  const [payoutModal, setPayoutModal] = useState<{ id: number; name: string } | null>(null);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutMethod, setPayoutMethod] = useState<"bank" | "paypal" | "crypto">("bank");
+  const [payoutRef, setPayoutRef] = useState("");
+
+  const { data: affiliatesData, refetch: refetchAffiliates } = trpc.affiliate.adminListAffiliates.useQuery(
+    { status: affFilter === "all" ? undefined : affFilter, limit: 100 },
+    { enabled: (me?.role === "admin" || me?.role === "superadmin") && tab === "affiliates" }
+  );
+  const affiliates = affiliatesData?.items ?? [];
+  const updateAffStatus = trpc.affiliate.adminUpdateStatus.useMutation({
+    onSuccess: () => { toast.success(language === "it" ? "Stato aggiornato" : "Status updated"); refetchAffiliates(); }
+  });
+  const registerPayout = trpc.affiliate.adminRegisterPayout.useMutation({
+    onSuccess: () => { toast.success(language === "it" ? "Pagamento registrato" : "Payout registered"); setPayoutModal(null); setPayoutAmount(""); setPayoutRef(""); refetchAffiliates(); }
+  });
   const [testEmailTo, setTestEmailTo] = useState("");
   const [smtpResult, setSmtpResult] = useState<{ ok: boolean; error?: string } | null>(null);
   const { language, setLanguage, t } = useLanguage();
@@ -76,6 +95,7 @@ export default function SuperAdmin() {
     { key: "users", label: "Utenti", icon: <Users className="h-3.5 w-3.5" /> },
     { key: "email", label: "Email", icon: <Mail className="h-3.5 w-3.5" /> },
     { key: "system", label: "Sistema", icon: <Server className="h-3.5 w-3.5" /> },
+    { key: "affiliates", label: language === "it" ? "Affiliati" : "Affiliates", icon: <Award className="h-3.5 w-3.5" /> },
   ];
 
   return (
@@ -347,7 +367,169 @@ export default function SuperAdmin() {
             </div>
           </div>
         )}
+        {tab === "affiliates" && (
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              <div className="flex gap-1">
+                {(["all", "pending", "active", "rejected"] as const).map(f => (
+                  <button key={f} onClick={() => setAffFilter(f)}
+                    className="px-3 h-8 rounded-lg text-xs font-medium transition-all"
+                    style={affFilter === f ? { background: GOLD, color: "#000" } : { border: `1px solid ${BORDER}`, color: "oklch(55% 0.05 264)" }}>
+                    {f === "all" ? (language === "it" ? "Tutti" : "All") : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input value={affSearch} onChange={e => setAffSearch(e.target.value)}
+                  placeholder={language === "it" ? "Cerca affiliato..." : "Search affiliate..."}
+                  className="pl-9 pr-4 h-8 rounded-lg border bg-transparent text-sm w-56 focus:outline-none"
+                  style={{ borderColor: BORDER }} />
+              </div>
+            </div>
+            <div className="rounded-xl border overflow-hidden" style={{ background: BG, borderColor: BORDER }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: BORDER }}>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Nome" : "Name"}</th>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Codice" : "Code"}</th>
+                    <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-center px-5 py-3 text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Commissioni" : "Commissions"}</th>
+                    <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Azioni" : "Actions"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {affiliates.filter(a =>
+                    !affSearch ||
+                    a.fullName.toLowerCase().includes(affSearch.toLowerCase()) ||
+                    a.email.toLowerCase().includes(affSearch.toLowerCase()) ||
+                    a.affiliateCode.includes(affSearch)
+                  ).map(aff => (
+                    <tr key={aff.id} className="border-b hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                      <td className="px-5 py-3">
+                        <div className="font-medium">{aff.fullName}</div>
+                        <div className="text-xs text-muted-foreground">{aff.email}</div>
+                      </td>
+                      <td className="px-5 py-3 font-mono text-xs" style={{ color: GOLD }}>{aff.affiliateCode}</td>
+                      <td className="px-5 py-3">
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "oklch(60% 0.18 264 / 0.15)", color: "oklch(70% 0.18 264)" }}>
+                          {aff.type}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{
+                          background: aff.status === "active" ? "oklch(65% 0.22 145 / 0.15)" : aff.status === "pending" ? "oklch(68% 0.19 72 / 0.15)" : "oklch(65% 0.22 25 / 0.15)",
+                          color: aff.status === "active" ? "oklch(65% 0.22 145)" : aff.status === "pending" ? GOLD : "oklch(65% 0.22 25)",
+                        }}>{aff.status}</span>
+                      </td>
+                      <td className="px-5 py-3 text-right font-medium">
+                        —
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          {aff.status === "pending" && (
+                            <>
+                              <button onClick={() => updateAffStatus.mutate({ affiliateId: aff.id, status: "active" })}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-green-500/10 transition-colors"
+                                title={language === "it" ? "Approva" : "Approve"}
+                                style={{ color: "oklch(65% 0.22 145)" }}>
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => updateAffStatus.mutate({ affiliateId: aff.id, status: "rejected" })}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-red-500/10 transition-colors"
+                                title={language === "it" ? "Rifiuta" : "Reject"}
+                                style={{ color: "oklch(65% 0.22 25)" }}>
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                          {aff.status === "active" && (
+                            <button onClick={() => setPayoutModal({ id: aff.id, name: aff.fullName })}
+                              className="h-7 px-2 rounded-lg flex items-center gap-1 text-xs hover:bg-white/10 transition-colors"
+                              style={{ border: `1px solid ${BORDER}`, color: GOLD }}>
+                              <Wallet className="h-3 w-3" />
+                              Payout
+                            </button>
+                          )}
+                          {aff.status === "active" && (
+                            <button onClick={() => updateAffStatus.mutate({ affiliateId: aff.id, status: "suspended" })}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-red-500/10 transition-colors"
+                              title={language === "it" ? "Sospendi" : "Suspend"}
+                              style={{ color: "oklch(65% 0.22 25)" }}>
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {affiliates.length === 0 && (
+                    <tr><td colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
+                      {language === "it" ? "Nessun affiliato trovato" : "No affiliates found"}
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
+
+      {payoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "oklch(0% 0 0 / 0.7)" }}>
+          <div className="rounded-2xl border p-6 w-full max-w-sm" style={{ background: BG, borderColor: BORDER }}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${GOLD}22` }}>
+                <DollarSign className="h-5 w-5" style={{ color: GOLD }} />
+              </div>
+              <div>
+                <h3 className="font-semibold">{language === "it" ? "Registra Payout" : "Register Payout"}</h3>
+                <p className="text-xs text-muted-foreground">{payoutModal.name}</p>
+              </div>
+            </div>
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">{language === "it" ? "Importo (€)" : "Amount (€)"}</label>
+                <input value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} type="number" step="0.01" min="0"
+                  placeholder="0.00" className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none"
+                  style={{ borderColor: BORDER }} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">{language === "it" ? "Metodo" : "Method"}</label>
+                <select value={payoutMethod} onChange={e => setPayoutMethod(e.target.value as "bank" | "paypal" | "crypto")}
+                  className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none"
+                  style={{ borderColor: BORDER, background: BG }}>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="crypto">Crypto</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">{language === "it" ? "Riferimento" : "Reference"}</label>
+                <input value={payoutRef} onChange={e => setPayoutRef(e.target.value)}
+                  placeholder={language === "it" ? "Numero bonifico / TX hash..." : "Wire number / TX hash..."}
+                  className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none"
+                  style={{ borderColor: BORDER }} />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setPayoutModal(null)}
+                className="flex-1 h-9 rounded-lg border text-sm hover:bg-white/5 transition-colors" style={{ borderColor: BORDER }}>
+                {language === "it" ? "Annulla" : "Cancel"}
+              </button>
+              <button
+                onClick={() => registerPayout.mutate({ affiliateProfileId: payoutModal.id, amount: payoutAmount, method: payoutMethod, reference: payoutRef || undefined })}
+                disabled={!payoutAmount || registerPayout.isPending}
+                className="flex-1 h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ background: GOLD, color: "#000" }}>
+                {registerPayout.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {language === "it" ? "Registra" : "Register"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDelete !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "oklch(0% 0 0 / 0.7)" }}>
