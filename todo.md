@@ -235,17 +235,17 @@
 - [x] ZIP pronto per public_html (dyneros-complete-final.zip, 397K, senza node_modules)
 
 ## Modulo Affiliazione (Nuovo)
-- [ ] 6 tabelle Drizzle: affiliate_profiles, affiliate_clicks, affiliate_leads, affiliate_conversions, affiliate_payouts, affiliate_agreements
-- [ ] pnpm db:push con nuove tabelle affiliazione
-- [ ] server/routers/affiliate.ts con tutte le procedure tRPC
-- [ ] Pagina pubblica /affiliazione (hero, programma, commissioni, FAQ, CTA)
-- [ ] AffiliateApply.tsx — form richiesta affiliato
-- [ ] SubAffiliateApply.tsx — form richiesta sub affiliato
-- [ ] Tracking referral: ?ref=CODE e ?subref=CODE, cookie 90 giorni, last-click-wins
-- [ ] DashAffiliate.tsx — dashboard affiliato autenticata
-- [ ] SuperAdmin: tab Affiliati (lista, approva/rifiuta, payout, CSV export)
-- [ ] App.tsx: nuove route /affiliazione, /affiliazione/apply, /affiliazione/sub-apply, /dashboard/affiliate
-- [ ] DashboardLayout: voce sidebar Affiliazione
-- [ ] LanguageContext: chiavi IT+EN per modulo affiliazione
-- [ ] TypeScript 0 errori
+- [x] 6 tabelle Drizzle: affiliate_profiles, affiliate_clicks, affiliate_referrals, affiliate_conversions, affiliate_payouts, affiliate_sub_affiliates
+- [x] pnpm db:push con nuove tabelle affiliazione
+- [x] server/affiliate.ts con tutte le procedure tRPC (15+ procedure)
+- [x] Pagina pubblica /affiliazione (hero, programma, commissioni, FAQ, CTA)
+- [x] AffiliateApply.tsx — form richiesta affiliato
+- [x] SubAffiliateApply.tsx — form richiesta sub affiliato
+- [x] Tracking referral: ?ref=CODE e ?subref=CODE, cookie 90 giorni, last-click-wins
+- [x] DashAffiliate.tsx — dashboard affiliato autenticata
+- [x] SuperAdmin: tab Affiliati (lista, approva/rifiuta, payout, CSV export)
+- [x] App.tsx: nuove route /affiliazione, /affiliazione/candidatura, /affiliazione/sub-affiliato, /dashboard/affiliate
+- [x] DashboardLayout: voce sidebar Programma Affiliati (Share2 icon)
+- [x] LanguageContext: chiavi IT+EN per modulo affiliazione (dash.nav.affiliate)
+- [x] TypeScript 0 errori
 - [ ] ZIP diff-only con solo file nuovi/modificati

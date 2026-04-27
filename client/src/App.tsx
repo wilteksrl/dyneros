@@ -31,6 +31,7 @@ import DashApiKeys from "./pages/DashApiKeys";
 import DashKnowledgeBase from "./pages/DashKnowledgeBase";
 import DashEmailSettings from "./pages/DashEmailSettings";
 import Register from "./pages/Register";
+import { useReferralTracking } from "./hooks/useReferralTracking";
 import Affiliazione from "./pages/Affiliazione";
 import AffiliateApply from "./pages/AffiliateApply";
 import SubAffiliateApply from "./pages/SubAffiliateApply";
@@ -84,6 +85,7 @@ function Router() {
 }
 
 function App() {
+  useReferralTracking();
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">

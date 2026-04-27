@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   AlertTriangle, CheckCircle, Crown, Globe, Loader2, LogOut, Mail, Search,
   Server, Shield, Trash2, UserCheck, UserX, Users, Send, CheckCircle2,
-  Award, DollarSign, Check, X, Wallet
+  Award, DollarSign, Check, X, Wallet, FileDown
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
@@ -379,12 +379,48 @@ export default function SuperAdmin() {
                   </button>
                 ))}
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input value={affSearch} onChange={e => setAffSearch(e.target.value)}
-                  placeholder={language === "it" ? "Cerca affiliato..." : "Search affiliate..."}
-                  className="pl-9 pr-4 h-8 rounded-lg border bg-transparent text-sm w-56 focus:outline-none"
-                  style={{ borderColor: BORDER }} />
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input value={affSearch} onChange={e => setAffSearch(e.target.value)}
+                    placeholder={language === "it" ? "Cerca affiliato..." : "Search affiliate..."}
+                    className="pl-9 pr-4 h-8 rounded-lg border bg-transparent text-sm w-56 focus:outline-none"
+                    style={{ borderColor: BORDER }} />
+                </div>
+                <button
+                  onClick={() => {
+                    const rows = affiliates.filter(a =>
+                      !affSearch ||
+                      a.fullName.toLowerCase().includes(affSearch.toLowerCase()) ||
+                      a.email.toLowerCase().includes(affSearch.toLowerCase()) ||
+                      a.affiliateCode.includes(affSearch)
+                    );
+                    const header = ["Nome", "Email", "Codice", "Tipo", "Stato", "Creato"].join(",");
+                    const csvRows = rows.map(a =>
+                      [
+                        `"${a.fullName}"`,
+                        `"${a.email}"`,
+                        a.affiliateCode,
+                        a.type,
+                        a.status,
+                        new Date(a.createdAt).toLocaleDateString("it-IT"),
+                      ].join(",")
+                    );
+                    const blob = new Blob([[header, ...csvRows].join("\n")], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `affiliati-${new Date().toISOString().slice(0,10)}.csv`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors hover:bg-white/10"
+                  style={{ border: `1px solid ${BORDER}`, color: GOLD }}
+                  title={language === "it" ? "Esporta CSV" : "Export CSV"}
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  CSV
+                </button>
               </div>
             </div>
             <div className="rounded-xl border overflow-hidden" style={{ background: BG, borderColor: BORDER }}>
