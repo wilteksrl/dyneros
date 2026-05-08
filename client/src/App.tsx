@@ -40,6 +40,13 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SuperAdmin from "./pages/SuperAdmin";
 import VerifyEmail from "./pages/VerifyEmail";
+import LandingIT from "./pages/LandingIT";
+import LandingEN from "./pages/LandingEN";
+import MarketingTools from "./pages/MarketingTools";
+import EmbedBannerHorizontal from "./pages/EmbedBannerHorizontal";
+import EmbedBannerSquare from "./pages/EmbedBannerSquare";
+import EmbedBannerSocial from "./pages/EmbedBannerSocial";
+import EmbedBannerVertical from "./pages/EmbedBannerVertical";
 
 function Router() {
   return (
@@ -78,6 +85,13 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/disclaimer" component={Disclaimer} />
       <Route path="/aml-kyc" component={AmlKyc} />
+      <Route path="/landing-dyneros" component={LandingIT} />
+      <Route path="/en/dyneros-landing" component={LandingEN} />
+      <Route path="/marketing-tools" component={MarketingTools} />
+      <Route path="/embed/banner-horizontal" component={EmbedBannerHorizontal} />
+      <Route path="/embed/banner-square" component={EmbedBannerSquare} />
+      <Route path="/embed/banner-social" component={EmbedBannerSocial} />
+      <Route path="/embed/banner-vertical" component={EmbedBannerVertical} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
