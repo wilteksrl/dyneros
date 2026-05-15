@@ -141,13 +141,28 @@ export default function SuperAdmin() {
           <p className="text-sm text-muted-foreground">Gestione completa degli utenti, email e configurazione della piattaforma Dyneros.</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
           {[
             { label: "Utenti totali", value: stats?.total ?? "—", icon: Users, color: GOLD },
             { label: "Attivi", value: stats?.active ?? "—", icon: UserCheck, color: "oklch(65% 0.22 145)" },
-            { label: "Sospesi", value: stats?.suspended ?? "—", icon: UserX, color: "oklch(65% 0.22 25)" },
-            { label: "Admin/SuperAdmin", value: stats?.admins ?? "—", icon: Shield, color: "oklch(68% 0.19 72)" },
-            { label: "Nuovi questo mese", value: stats?.newThisMonth ?? "—", icon: CheckCircle, color: "oklch(65% 0.18 220)" },
+            { label: "Attivi 30gg", value: stats?.activeUsers30d ?? "—", icon: CheckCircle, color: "oklch(65% 0.18 220)" },
+            { label: "Nuovi questo mese", value: stats?.newThisMonth ?? "—", icon: CheckCircle2, color: "oklch(65% 0.18 220)" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl border p-4" style={{ background: BG, borderColor: BORDER }}>
+              <div className="flex items-center gap-2 mb-2">
+                <s.icon className="h-4 w-4" style={{ color: s.color }} />
+                <span className="text-xs text-muted-foreground">{s.label}</span>
+              </div>
+              <div className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          {[
+            { label: "Fatturato (pagato)", value: stats?.totalRevenue ? `€ ${Number(stats.totalRevenue).toLocaleString("it-IT", { minimumFractionDigits: 2 })}` : "€ 0.00", icon: DollarSign, color: GOLD },
+            { label: "Affiliati attivi", value: stats?.activeAffiliates ?? "—", icon: Award, color: "oklch(68% 0.19 72)" },
+            { label: "Ticket aperti", value: stats?.openTickets ?? "—", icon: AlertTriangle, color: "oklch(65% 0.22 25)" },
+            { label: "Progetti attivi", value: stats?.activeProjects ?? "—", icon: Server, color: "oklch(65% 0.18 220)" },
           ].map((s) => (
             <div key={s.label} className="rounded-xl border p-4" style={{ background: BG, borderColor: BORDER }}>
               <div className="flex items-center gap-2 mb-2">
@@ -173,6 +188,47 @@ export default function SuperAdmin() {
         </div>
 
         {tab === "users" && (
+          <>
+          <div className="rounded-xl border overflow-hidden mb-5" style={{ background: BG, borderColor: BORDER }}>
+            <div className="px-5 py-4 border-b" style={{ borderColor: BORDER }}>
+              <h2 className="font-semibold text-sm">Ultimi 10 utenti registrati</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground" style={{ borderColor: BORDER }}>
+                    <th className="text-left px-5 py-3 font-medium">Utente</th>
+                    <th className="text-left px-4 py-3 font-medium">Ruolo</th>
+                    <th className="text-left px-4 py-3 font-medium">Stato</th>
+                    <th className="text-left px-4 py-3 font-medium">Registrato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(stats?.recentUsers ?? []).map((u) => (
+                    <tr key={u.id} className="border-b hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "oklch(68% 0.19 72 / 0.15)", color: GOLD }}>
+                            {(u.name ?? u.email ?? "?")[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-medium text-xs">{u.name ?? "—"}</div>
+                            <div className="text-xs text-muted-foreground">{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3"><span className="text-xs" style={{ color: ROLE_COLORS[u.role] }}>{u.role}</span></td>
+                      <td className="px-4 py-3"><span className="text-xs" style={{ color: u.status === "active" ? "oklch(65% 0.22 145)" : "oklch(65% 0.22 25)" }}>{u.status}</span></td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("it-IT") : "—"}</td>
+                    </tr>
+                  ))}
+                  {(stats?.recentUsers ?? []).length === 0 && (
+                    <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-xs">Nessun utente</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
           <div className="rounded-xl border overflow-hidden" style={{ background: BG, borderColor: BORDER }}>
             <div className="px-5 py-4 border-b flex items-center justify-between gap-4" style={{ borderColor: BORDER }}>
               <h2 className="font-semibold text-sm">Gestione Utenti</h2>
@@ -265,6 +321,7 @@ export default function SuperAdmin() {
               </div>
             )}
           </div>
+          </>
         )}
 
         {tab === "email" && (

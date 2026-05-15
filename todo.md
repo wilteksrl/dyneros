@@ -248,4 +248,4 @@
 - [x] DashboardLayout: voce sidebar Programma Affiliati (Share2 icon)
 - [x] LanguageContext: chiavi IT+EN per modulo affiliazione (dash.nav.affiliate)
 - [x] TypeScript 0 errori
-- [ ] ZIP diff-only con solo file nuovi/modificati
+- [x] ZIP diff-only con solo file nuovi/modificati

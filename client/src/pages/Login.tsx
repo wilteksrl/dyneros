@@ -15,13 +15,17 @@ export default function Login() {
   const [error, setError] = useState("");
   const { language, setLanguage } = useLanguage();
 
+  const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation({
-    onSuccess: () => setLocation("/dashboard"),
+    onSuccess: async () => {
+      const me = await utils.auth.me.fetch();
+      setLocation(me?.role === "superadmin" ? "/superadmin" : "/dashboard");
+    },
     onError: (e) => setError(e.message),
   });
 
   useEffect(() => {
-    if (user) setLocation("/dashboard");
+    if (user) setLocation(user.role === "superadmin" ? "/superadmin" : "/dashboard");
   }, [user]);
 
   const handleSubmit = (e: React.FormEvent) => {

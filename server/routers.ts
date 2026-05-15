@@ -2,12 +2,13 @@ import { systemRouter } from "./_core/systemRouter";
 import { affiliateRouter } from "./affiliate";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { eq, and, desc, asc, count, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, asc, count, sql, isNull, sum } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   users, projects, tickets, ticketReplies, invoices, contracts,
   documents, wallets, smartContracts, domains, aiProjects,
-  notifications, userSettings, apiKeys, auditLog
+  notifications, userSettings, apiKeys, auditLog,
+  affiliateProfiles, affiliateConversions
 } from "../drizzle/schema";
 import { COOKIE_NAME } from "@shared/const";
 import {
@@ -871,16 +872,32 @@ export const appRouter = router({
     stats: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
       const db = await getDb();
-      if (!db) return { total: 0, active: 0, suspended: 0, admins: 0, newThisMonth: 0 };
-      const all = await db.select({ role: users.role, status: users.status, createdAt: users.createdAt }).from(users);
+      if (!db) return { total: 0, active: 0, suspended: 0, admins: 0, newThisMonth: 0, activeUsers30d: 0, activeAffiliates: 0, totalConversions: 0, totalRevenue: "0", openTickets: 0, activeProjects: 0, recentUsers: [] };
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const [all, affRows, convRows, revenueRows, ticketRows, projectRows, recentUsersRows] = await Promise.all([
+        db.select({ role: users.role, status: users.status, createdAt: users.createdAt, lastSignedIn: users.lastSignedIn }).from(users),
+        db.select({ c: count() }).from(affiliateProfiles).where(eq(affiliateProfiles.status, "active")),
+        db.select({ c: count() }).from(affiliateConversions),
+        db.select({ s: sum(invoices.amount) }).from(invoices).where(eq(invoices.status, "paid")),
+        db.select({ c: count() }).from(tickets).where(sql`status NOT IN ('resolved','closed')`),
+        db.select({ c: count() }).from(projects).where(eq(projects.status, "in_progress")),
+        db.select({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status, createdAt: users.createdAt }).from(users).orderBy(desc(users.createdAt)).limit(10),
+      ]);
       return {
         total: all.length,
         active: all.filter(u => u.status === "active").length,
         suspended: all.filter(u => u.status === "suspended").length,
         admins: all.filter(u => u.role === "admin" || u.role === "superadmin").length,
         newThisMonth: all.filter(u => u.createdAt >= monthStart).length,
+        activeUsers30d: all.filter(u => u.lastSignedIn && u.lastSignedIn >= thirtyDaysAgo).length,
+        activeAffiliates: affRows[0]?.c ?? 0,
+        totalConversions: convRows[0]?.c ?? 0,
+        totalRevenue: revenueRows[0]?.s ?? "0",
+        openTickets: ticketRows[0]?.c ?? 0,
+        activeProjects: projectRows[0]?.c ?? 0,
+        recentUsers: recentUsersRows,
       };
     }),
   }),

@@ -22,8 +22,8 @@ function Badge({ color, label }: { color: string; label: string }) {
 
 export default function DashContracts() {
   const { t } = useLanguage();
-  const { data: docs, isLoading } = trpc.dashboard.documents.useQuery();
-  const contracts = docs?.filter(d => d.type !== null && ["contract", "sow", "nda"].includes(d.type)) ?? [];
+  const { data: contractsData, isLoading } = trpc.dashboard.contracts.useQuery();
+  const contracts = contractsData ?? [];
 
   const statusLabels: Record<string, string> = {
     signed: t("contract.signed"), approved: t("contract.approved"),
@@ -41,7 +41,7 @@ export default function DashContracts() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: t("contract.active"), value: contracts.filter(c => c.status === "signed").length, color: "oklch(60% 0.18 145)" },
-            { label: t("contract.pending_approval"), value: contracts.filter(c => c.status === "approved").length, color: GOLD },
+            { label: t("contract.pending_approval"), value: contracts.filter(c => c.status === "active").length, color: GOLD },
             { label: t("contract.in_draft"), value: contracts.filter(c => c.status === "draft").length, color: "oklch(55% 0.05 264)" },
           ].map(item => (
             <div key={item.label} className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
@@ -66,13 +66,11 @@ export default function DashContracts() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <p className="text-sm font-medium truncate">{doc.name}</p>
+                    <p className="text-sm font-medium truncate">{doc.contractName}</p>
                     <Badge color={STATUS_COLORS[doc.status] || "oklch(55% 0.05 264)"} label={statusLabels[doc.status] || doc.status} />
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{doc.category}</span>
-                    <span>·</span>
-                    <span>{doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : "—"}</span>
+                    <span>{doc.type}</span>
                     <span>·</span>
                     <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
                   </div>

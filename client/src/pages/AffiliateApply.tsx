@@ -223,9 +223,9 @@ export default function AffiliateApply() {
                   id="privacy"
                   checked={form.privacyConsent}
                   onCheckedChange={v => setForm(f => ({ ...f, privacyConsent: !!v }))}
-                  className="mt-0.5"
+                  className="mt-0.5 border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 data-[state=checked]:text-black"
                 />
-                <Label htmlFor="privacy" className="text-gray-300 text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="privacy" className="text-white text-sm leading-relaxed cursor-pointer">
                   {isIT
                     ? "Accetto la Privacy Policy di Dyneros Ltd e autorizzo il trattamento dei miei dati personali per la gestione del programma affiliazione."
                     : "I accept Dyneros Ltd's Privacy Policy and authorize the processing of my personal data for the management of the affiliate program."}
@@ -236,9 +236,9 @@ export default function AffiliateApply() {
                   id="terms"
                   checked={form.termsConsent}
                   onCheckedChange={v => setForm(f => ({ ...f, termsConsent: !!v }))}
-                  className="mt-0.5"
+                  className="mt-0.5 border-amber-500 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 data-[state=checked]:text-black"
                 />
-                <Label htmlFor="terms" className="text-gray-300 text-sm leading-relaxed cursor-pointer">
+                <Label htmlFor="terms" className="text-white text-sm leading-relaxed cursor-pointer">
                   {isIT
                     ? "Accetto i Termini e Condizioni del Programma Affiliazione Dyneros v1.0, incluse le politiche di commissione e pagamento."
                     : "I accept the Terms and Conditions of the Dyneros Affiliate Program v1.0, including commission and payment policies."}
