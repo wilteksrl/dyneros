@@ -504,7 +504,7 @@ export const appRouter = router({
         userWallets = await db.select().from(wallets).where(eq(wallets.userId, ctx.user.id));
       }
       return {
-        addresses: userWallets.map(w => ({ label: w.name ?? "Wallet", address: w.address, type: "eoa" })),
+        addresses: userWallets.map(w => ({ id: w.id, label: w.name ?? "Wallet", address: w.address, type: "eoa" })),
         portfolio: OFFICIAL_TOKENS.map(t => ({ ...t, balance: "0.00" })),
         recentTx: [],
         chain: GOLD_CHAIN,
@@ -598,6 +598,7 @@ export const appRouter = router({
       }
       return {
         domains: userDomains.map(d => ({
+          id: d.id,
           domain: d.domainName,
           status: d.status,
           ssl: d.sslStatus,

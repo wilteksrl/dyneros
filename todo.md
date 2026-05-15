@@ -269,12 +269,12 @@
 - [x] ZIP diff-only + CHANGES.md
 
 ## CRUD Completo v4
-- [ ] Backend: createProject, createTicket, addWallet, removeWallet, createApiKey, revokeApiKey, addDomain, removeDomain
-- [ ] Backend: updateProjectStatus, replyToTicket, updateTicketStatus, setAffiliateCommission, generateApiKeyForUser, blockchainStats
-- [ ] DashProjects.tsx: form "+ Nuovo Progetto" con modal
-- [ ] DashTickets.tsx: form "+ Nuovo Ticket" + sezione risposte
-- [ ] DashWallet.tsx: form aggiungi/rimuovi wallet
-- [ ] DashApiKeys.tsx: genera/revoca API key con box copiabile
-- [ ] DashDomains.tsx: form aggiungi/rimuovi dominio
-- [ ] SuperAdmin.tsx: azioni progetti (approva/stato), ticket (risposta+stato), affiliati (commissione editabile), blockchain stats
-- [ ] TypeScript 0 errori + ZIP diff-only + CHANGES.md
+- [x] Backend: createProject, createTicket, addWallet, removeWallet, createApiKey, revokeApiKey, addDomain, removeDomain
+- [x] Backend: updateProjectStatus, replyToTicket, updateTicketStatus, setAffiliateCommission, generateApiKeyForUser, blockchainStats
+- [x] DashProjects.tsx: form "+ Nuovo Progetto" con modal
+- [x] DashTickets.tsx: form "+ Nuovo Ticket" + sezione risposte
+- [x] DashWallet.tsx: form aggiungi/rimuovi wallet
+- [x] DashApiKeys.tsx: genera/revoca API key con box copiabile
+- [x] DashDomains.tsx: form aggiungi/rimuovi dominio
+- [x] SuperAdmin.tsx: azioni progetti (approva/stato), ticket (risposta+stato), affiliati (commissione editabile), blockchain stats
+- [x] TypeScript 0 errori + ZIP diff-only + CHANGES.md

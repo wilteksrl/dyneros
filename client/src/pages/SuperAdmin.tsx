@@ -448,8 +448,11 @@ function SectionAllDocuments() {
 }
 
 function SectionAffiliates() {
-  const { data, isLoading, refetch } = trpc.superadmin.affiliateList.useQuery();
-  const action = trpc.superadmin.affiliateAction.useMutation({ onSuccess: () => { toast.success("Azione eseguita"); refetch(); } });
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.superadmin.affiliateList.useQuery();
+  const action = trpc.superadmin.affiliateAction.useMutation({ onSuccess: () => { toast.success("Azione eseguita"); utils.superadmin.affiliateList.invalidate(); } });
+  const setCommission = trpc.superadmin.setAffiliateCommission.useMutation({ onSuccess: () => { toast.success("Commissione aggiornata"); utils.superadmin.affiliateList.invalidate(); } });
+  const [editingCommission, setEditingCommission] = useState<Record<number, string>>({});
   if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
   if (!data || data.profiles.length === 0) return <EmptyState icon={Link2} text="Nessun affiliato presente" />;
   return (
@@ -474,16 +477,37 @@ function SectionAffiliates() {
             <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
               <th className="text-left px-4 py-2.5 font-medium">Codice</th>
               <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-              <th className="text-left px-4 py-2.5 font-medium">Commissione</th>
+              <th className="text-left px-4 py-2.5 font-medium">Commissione %</th>
               <th className="text-left px-4 py-2.5 font-medium">Azioni</th>
             </tr>
           </thead>
           <tbody>
-              {data.profiles.map((p: { id: number; affiliateCode: string; status: string; commissionRate?: string | null }) => (
+            {data.profiles.map((p: { id: number; affiliateCode: string; status: string; commissionRate?: string | null; notes?: string | null }) => (
               <tr key={p.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
                 <td className="px-4 py-2.5 font-mono text-xs">{p.affiliateCode}</td>
                 <td className="px-4 py-2.5"><Badge label={p.status} color={p.status === "active" ? "oklch(60% 0.18 145)" : p.status === "pending" ? GOLD : "oklch(55% 0.22 25)"} /></td>
-                <td className="px-4 py-2.5 text-xs">{p.commissionRate ?? "—"}%</td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number" min="0" max="100" step="0.5"
+                      value={editingCommission[p.id] ?? (p.commissionRate ?? "")}
+                      onChange={e => setEditingCommission(prev => ({ ...prev, [p.id]: e.target.value }))}
+                      className="w-16 h-7 px-2 text-xs rounded border bg-transparent outline-none"
+                      style={{ borderColor: BORDER }}
+                      placeholder="%"
+                    />
+                    <button
+                      onClick={() => {
+                        const val = parseFloat(editingCommission[p.id] ?? "");
+                        if (!isNaN(val)) setCommission.mutate({ affiliateId: p.id, commission: val });
+                      }}
+                      disabled={setCommission.isPending}
+                      className="h-7 px-2 text-[10px] rounded border disabled:opacity-50"
+                      style={{ borderColor: GOLD + "40", color: GOLD }}>
+                      Salva
+                    </button>
+                  </div>
+                </td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-1">
                     {p.status === "pending" && <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} className="text-[10px] px-2 py-1 rounded border" style={{ borderColor: "oklch(60% 0.18 145)40", color: "oklch(60% 0.18 145)" }}>Approva</button>}
@@ -783,17 +807,35 @@ function SectionAllApiKeys() {
 }
 
 function SectionBlockchain() {
+  const { data, isLoading } = trpc.superadmin.blockchainStats.useQuery();
+  const chainInfo = [
+    { label: "Chain ID", value: "24589" },
+    { label: "Nome", value: "DYNEROS Chain" },
+    { label: "Valuta", value: "DYN" },
+    { label: "RPC", value: "https://mainnet.dyneros.com" },
+    { label: "Explorer", value: "https://explorer.dyneros.com" },
+    { label: "Wallet", value: "https://wallet.dyneros.com" },
+  ];
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.3)" }}>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Blocco Corrente</p>
+          <p className="text-xl font-semibold" style={{ color: GOLD }}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin inline" /> : data?.blockNumber ? data.blockNumber.toLocaleString("it-IT") : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Wallet Registrati</p>
+          <p className="text-xl font-semibold">{isLoading ? "…" : data?.walletsCount ?? 0}</p>
+        </div>
+        <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Smart Contracts</p>
+          <p className="text-xl font-semibold">{isLoading ? "…" : data?.contractsCount ?? 0}</p>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          { label: "Chain ID", value: "24589" },
-          { label: "Nome", value: "DYNEROS Chain" },
-          { label: "Valuta", value: "DYN" },
-          { label: "RPC", value: "https://mainnet.dyneros.com" },
-          { label: "Explorer", value: "https://explorer.dyneros.com" },
-          { label: "Wallet", value: "https://wallet.dyneros.com" },
-        ].map(item => (
+        {chainInfo.map(item => (
           <div key={item.label} className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{item.label}</p>
             <p className="text-sm font-mono font-medium truncate">{item.value}</p>

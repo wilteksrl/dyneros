@@ -81,3 +81,51 @@ Nessun `db:push` necessario.
 
 ---
 *IT Team Alfassa*
+
+---
+
+# CHANGES — CRUD Completo v4 (15 Maggio 2026)
+
+## File modificati (5)
+
+### `server/routers.ts`
+- `dashboard.walletInfo`: aggiunto campo `id` nel mapping degli indirizzi wallet (abilita il pulsante "Rimuovi")
+- `dashboard.domains`: aggiunto campo `id` nel mapping dei domini (abilita il pulsante "Rimuovi")
+- `dashboard.addWallet`: nuovo endpoint — aggiunge wallet per utente corrente (nome, indirizzo 0x, rete)
+- `dashboard.removeWallet`: nuovo endpoint — rimuove wallet per ID (solo proprietario)
+- `dashboard.addDomain`: nuovo endpoint — aggiunge dominio (nome, registrar, scadenza, note)
+- `dashboard.removeDomain`: nuovo endpoint — rimuove dominio per ID (solo proprietario)
+- `superadmin.updateProjectStatus`: nuovo endpoint — cambia stato progetto (planning/in_progress/completed/on_hold)
+- `superadmin.replyToTicket`: nuovo endpoint — risposta admin a ticket, salva in `ticket_replies`
+- `superadmin.updateTicketStatus`: nuovo endpoint — cambia stato ticket (open/in_progress/resolved/closed)
+- `superadmin.setAffiliateCommission`: nuovo endpoint — salva commissione % nelle note affiliato
+- `superadmin.generateApiKeyForUser`: nuovo endpoint — genera API key per utente specifico (solo superadmin)
+- `superadmin.blockchainStats`: nuovo endpoint — blocco corrente live dal nodo DYNEROS + conteggi DB (wallet, smart contracts)
+
+### `client/src/pages/DashProjects.tsx`
+- Aggiunto pulsante "+ Nuovo Progetto" con modal form (nome, tipo, priorità, ambiente, descrizione)
+- Mutation `trpc.dashboard.createProject` con invalidazione automatica della lista
+
+### `client/src/pages/DashWallet.tsx`
+- Aggiunto form "Aggiungi Wallet" (nome, indirizzo 0x, rete)
+- Aggiunto pulsante "Rimuovi" per ogni wallet (richiede `id` ora presente nel response)
+
+### `client/src/pages/DashDomains.tsx`
+- Aggiunto form "Aggiungi Dominio" (nome dominio, registrar, data scadenza, note)
+- Aggiunto pulsante "Rimuovi" per ogni dominio (richiede `id` ora presente nel response)
+
+### `client/src/pages/SuperAdmin.tsx`
+- **SectionAllProjects**: aggiunta colonna "Cambia Stato" con `<select>` inline per ogni progetto
+- **SectionAllTickets**: riscritta come accordion espandibile — click su riga apre form risposta + dropdown stato ticket
+- **SectionAffiliates**: aggiunta colonna "Commissione %" con input numerico editabile + pulsante "Salva" per ogni affiliato
+- **SectionBlockchain**: aggiornata con 3 KPI reali (blocco corrente live, wallet registrati, smart contracts) + info chain
+
+## Comandi deploy
+```bash
+npm run build
+pm2 restart dyneros
+```
+Nessun `db:push` necessario — schema invariato.
+
+---
+*IT Team Alfassa*
