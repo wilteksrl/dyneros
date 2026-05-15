@@ -1,567 +1,868 @@
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
-  Users, Mail, Server, Award, BarChart3, Loader2,
-  LogOut, Search, ChevronLeft, ChevronRight, Check, X,
-  Trash2, ShieldCheck, ShieldOff, RefreshCw, Send, Globe
+  Activity, AlertTriangle, BarChart2, Box, ChevronLeft, ChevronRight,
+  CircuitBoard, Database, FileText, Globe, Key, Layers, Loader2,
+  LogOut, Mail, Menu, Receipt, Server, Settings, Shield, Ticket,
+  TrendingUp, Users, Wallet, X, Zap, FolderOpen, Bot, Bell, Link2
 } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 
-const BG = "#050505";
-const CARD = "#0d0d14";
-const BORDER = "oklch(20% 0.008 264)";
 const GOLD = "oklch(68% 0.19 72)";
-const GOLD_DIM = "oklch(68% 0.19 72 / 0.15)";
-const TEXT = "#f9fafb";
-const MUTED = "oklch(55% 0.01 264)";
+const GOLD_DIM = "oklch(68% 0.19 72 / 0.12)";
+const BORDER = "oklch(20% 0.008 264)";
+const CARD_BG = "oklch(10% 0.006 264)";
+const SIDEBAR_BG = "oklch(8% 0.005 264)";
 
-type Tab = "overview" | "users" | "email" | "system" | "affiliates";
+type Section =
+  | "overview" | "users" | "projects" | "tickets" | "invoices" | "contracts"
+  | "documents" | "affiliates" | "email" | "system"
+  | "blockchain" | "wallets" | "smart-contracts"
+  | "domains" | "ai"
+  | "notifications" | "settings" | "security" | "api-keys" | "email-settings";
 
-function KpiCard({ label, value }: { label: string; value: string | number }) {
+interface NavItem { id: Section; label: string; icon: React.ElementType; group: string; }
+
+const NAV_ITEMS: NavItem[] = [
+  { id: "overview", label: "Overview", icon: BarChart2, group: "GESTIONE PIATTAFORMA" },
+  { id: "users", label: "Tutti gli Utenti", icon: Users, group: "GESTIONE PIATTAFORMA" },
+  { id: "projects", label: "Tutti i Progetti", icon: FolderOpen, group: "GESTIONE PIATTAFORMA" },
+  { id: "tickets", label: "Tutti i Ticket", icon: Ticket, group: "GESTIONE PIATTAFORMA" },
+  { id: "invoices", label: "Tutte le Fatture", icon: Receipt, group: "GESTIONE PIATTAFORMA" },
+  { id: "contracts", label: "Tutti i Contratti", icon: FileText, group: "GESTIONE PIATTAFORMA" },
+  { id: "documents", label: "Tutti i Documenti", icon: Layers, group: "GESTIONE PIATTAFORMA" },
+  { id: "affiliates", label: "Affiliati", icon: Link2, group: "GESTIONE PIATTAFORMA" },
+  { id: "email", label: "Email", icon: Mail, group: "GESTIONE PIATTAFORMA" },
+  { id: "system", label: "Sistema", icon: Server, group: "GESTIONE PIATTAFORMA" },
+  { id: "blockchain", label: "Blockchain / Web3", icon: CircuitBoard, group: "BLOCKCHAIN GLOBALE" },
+  { id: "wallets", label: "Wallet & Assets", icon: Wallet, group: "BLOCKCHAIN GLOBALE" },
+  { id: "smart-contracts", label: "Smart Contracts", icon: Box, group: "BLOCKCHAIN GLOBALE" },
+  { id: "domains", label: "Domini / Hosting", icon: Globe, group: "SERVIZI DIGITALI" },
+  { id: "ai", label: "AI & Automazioni", icon: Bot, group: "SERVIZI DIGITALI" },
+  { id: "notifications", label: "Notifiche", icon: Bell, group: "ACCOUNT ADMIN" },
+  { id: "settings", label: "Impostazioni", icon: Settings, group: "ACCOUNT ADMIN" },
+  { id: "security", label: "Sicurezza", icon: Shield, group: "ACCOUNT ADMIN" },
+  { id: "api-keys", label: "API / Accessi", icon: Key, group: "ACCOUNT ADMIN" },
+  { id: "email-settings", label: "Email & Notifiche", icon: Zap, group: "ACCOUNT ADMIN" },
+];
+
+function Badge({ label, color }: { label: string; color: string }) {
   return (
-    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "18px 20px" }}>
-      <div style={{ color: MUTED, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 6 }}>{label}</div>
-      <div style={{ color: GOLD, fontSize: 26, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
-    </div>
-  );
-}
-
-function Badge({ status }: { status: string }) {
-  const map: Record<string, { bg: string; color: string }> = {
-    active: { bg: "oklch(30% 0.08 145)", color: "oklch(70% 0.18 145)" },
-    pending: { bg: "oklch(30% 0.08 72)", color: GOLD },
-    suspended: { bg: "oklch(25% 0.06 25)", color: "oklch(65% 0.18 25)" },
-    rejected: { bg: "oklch(25% 0.06 25)", color: "oklch(65% 0.18 25)" },
-    superadmin: { bg: GOLD_DIM, color: GOLD },
-    admin: { bg: "oklch(25% 0.06 264)", color: "oklch(65% 0.12 264)" },
-    user: { bg: "oklch(18% 0.005 264)", color: MUTED },
-    sent: { bg: "oklch(30% 0.08 145)", color: "oklch(70% 0.18 145)" },
-    failed: { bg: "oklch(25% 0.06 25)", color: "oklch(65% 0.18 25)" },
-    bulk: { bg: "oklch(25% 0.06 264)", color: "oklch(65% 0.12 264)" },
-    single: { bg: "oklch(18% 0.005 264)", color: MUTED },
-    affiliate: { bg: GOLD_DIM, color: GOLD },
-    sub_affiliate: { bg: "oklch(25% 0.06 264)", color: "oklch(65% 0.12 264)" },
-  };
-  const s = map[status] ?? { bg: "oklch(18% 0.005 264)", color: MUTED };
-  return (
-    <span style={{ background: s.bg, color: s.color, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
-      {status}
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border"
+      style={{ color, borderColor: `${color}40`, background: `${color}12` }}>
+      <span className="h-1.5 w-1.5 rounded-full inline-block" style={{ background: color }} />{label}
     </span>
   );
 }
 
-function TabOverview() {
-  const { data: stats, isLoading } = trpc.superadmin.stats.useQuery();
-  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!stats) return null;
-  const kpis = [
-    { label: "Utenti Totali", value: stats.total },
-    { label: "Utenti Attivi", value: stats.active },
-    { label: "Nuovi (questo mese)", value: stats.newThisMonth },
-    { label: "Attivi (30gg)", value: stats.activeUsers30d },
-    { label: "Fatturato Pagato", value: `€${Number(stats.totalRevenue ?? 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })}` },
-    { label: "Affiliati Attivi", value: stats.activeAffiliates },
-    { label: "Ticket Aperti", value: stats.openTickets },
-    { label: "Progetti Attivi", value: stats.activeProjects },
-  ];
+function EmptyState({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
-    <div className="space-y-6">
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
-        {kpis.map(k => <KpiCard key={k.label} label={k.label} value={k.value} />)}
-      </div>
-      <div>
-        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 12 }}>Ultimi 10 utenti registrati</div>
-        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-                {["Nome", "Email", "Ruolo", "Stato", "Registrato"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(stats.recentUsers ?? []).map((u, i) => (
-                <tr key={u.id} style={{ borderBottom: i < (stats.recentUsers?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <td style={{ padding: "10px 14px", color: TEXT }}>{u.name ?? "—"}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED }}>{u.email}</td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={u.role} /></td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={u.status} /></td>
-                  <td style={{ padding: "10px 14px", color: MUTED }}>{new Date(u.createdAt).toLocaleDateString("it-IT")}</td>
-                </tr>
-              ))}
-              {(stats.recentUsers ?? []).length === 0 && (
-                <tr><td colSpan={5} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessun utente</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+      <Icon className="h-10 w-10 mb-3 opacity-20" />
+      <p className="text-sm">{text}</p>
+    </div>
+  );
+}
+
+function Pagination({ page, pages, total, limit, onPage }: { page: number; pages: number; total: number; limit: number; onPage: (p: number) => void }) {
+  if (pages <= 1) return null;
+  const from = (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
+  return (
+    <div className="flex items-center justify-between mt-4 pt-4 border-t" style={{ borderColor: BORDER }}>
+      <span className="text-xs text-muted-foreground">{from}–{to} di {total}</span>
+      <div className="flex items-center gap-1">
+        <button disabled={page === 1} onClick={() => onPage(page - 1)}
+          className="h-7 w-7 flex items-center justify-center rounded-lg border text-xs disabled:opacity-30 transition-colors hover:bg-[oklch(15%_0.008_264)]"
+          style={{ borderColor: BORDER }}>
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        {Array.from({ length: Math.min(pages, 7) }, (_, i) => {
+          const p = pages <= 7 ? i + 1 : i + 1;
+          return (
+            <button key={p} onClick={() => onPage(p)}
+              className="h-7 w-7 flex items-center justify-center rounded-lg border text-xs transition-colors"
+              style={{ borderColor: page === p ? GOLD : BORDER, background: page === p ? GOLD : "transparent", color: page === p ? "#000" : undefined }}>
+              {p}
+            </button>
+          );
+        })}
+        <button disabled={page === pages} onClick={() => onPage(page + 1)}
+          className="h-7 w-7 flex items-center justify-center rounded-lg border text-xs disabled:opacity-30 transition-colors hover:bg-[oklch(15%_0.008_264)]"
+          style={{ borderColor: BORDER }}>
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
 }
 
-function TabUsers() {
-  const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin" | "superadmin">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended" | "pending">("all");
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
-
-  const { data, isLoading, refetch } = trpc.superadmin.listUsersPaged.useQuery({ page, limit: 25, search: search || undefined, role: roleFilter, status: statusFilter });
-  const updateRole = trpc.superadmin.updateUserRole.useMutation({ onSuccess: () => { refetch(); toast.success("Ruolo aggiornato"); }, onError: e => toast.error(e.message) });
-  const updateStatus = trpc.superadmin.updateUserStatus.useMutation({ onSuccess: () => { refetch(); toast.success("Stato aggiornato"); }, onError: e => toast.error(e.message) });
-  const deleteUser = trpc.superadmin.deleteUser.useMutation({ onSuccess: () => { refetch(); setConfirmDelete(null); toast.success("Utente eliminato"); }, onError: e => toast.error(e.message) });
-
-  const rows = data?.rows ?? [];
-  const total = data?.total ?? 0;
-  const pages = data?.pages ?? 1;
-
-  const selStyle = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 12px", color: TEXT, fontSize: 13 };
-
+function SectionOverview() {
+  const { data, isLoading } = trpc.superadmin.stats.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data) return <EmptyState icon={BarChart2} text="Dati non disponibili" />;
+  const kpis = [
+    { label: "Utenti Totali", value: data.total, icon: Users, accent: true },
+    { label: "Attivi", value: data.active, icon: Activity },
+    { label: "Sospesi", value: data.suspended, icon: AlertTriangle },
+    { label: "Admin/SuperAdmin", value: data.admins, icon: Shield },
+    { label: "Nuovi (mese)", value: data.newThisMonth, icon: TrendingUp },
+    { label: "Attivi 30gg", value: data.activeUsers30d, icon: Zap },
+    { label: "Affiliati Attivi", value: data.activeAffiliates, icon: Link2 },
+    { label: "Conversioni", value: data.totalConversions, icon: BarChart2 },
+    { label: "Fatturato (€)", value: parseFloat(data.totalRevenue || "0").toLocaleString("it-IT"), icon: Receipt, accent: true },
+    { label: "Ticket Aperti", value: data.openTickets, icon: Ticket },
+    { label: "Progetti Attivi", value: data.activeProjects, icon: FolderOpen },
+  ];
   return (
-    <div className="space-y-4">
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
-        <div style={{ position: "relative" as const, flex: "1 1 220px" }}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: MUTED }} />
-          <input value={searchInput} onChange={e => setSearchInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setSearch(searchInput); setPage(1); } }} placeholder="Cerca nome, email, azienda… (Invio)" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 12px 8px 32px", color: TEXT, fontSize: 13, width: "100%" }} />
-        </div>
-        <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value as typeof roleFilter); setPage(1); }} style={selStyle}>
-          <option value="all">Tutti i ruoli</option>
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-          <option value="superadmin">Superadmin</option>
-        </select>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }} style={selStyle}>
-          <option value="all">Tutti gli stati</option>
-          <option value="active">Attivi</option>
-          <option value="pending">In attesa</option>
-          <option value="suspended">Sospesi</option>
-        </select>
-        <button onClick={() => { setSearch(searchInput); setPage(1); refetch(); }} style={{ background: GOLD_DIM, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "8px 14px", color: GOLD, fontSize: 13, cursor: "pointer" }}>
-          <RefreshCw className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      <div style={{ display: "flex", gap: 12 }}>
-        {[{ label: "Totale DB", value: total }, { label: "In pagina", value: rows.length }].map(c => (
-          <div key={c.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 16px", fontSize: 12 }}>
-            <span style={{ color: MUTED }}>{c.label}: </span><span style={{ color: GOLD, fontWeight: 700 }}>{c.value}</span>
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+        {kpis.map(k => (
+          <div key={k.label} className="rounded-xl border p-4 flex flex-col gap-2"
+            style={{ background: CARD_BG, borderColor: k.accent ? "oklch(68% 0.19 72 / 0.3)" : BORDER }}>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{k.label}</p>
+              <k.icon className="h-3.5 w-3.5" style={{ color: k.accent ? GOLD : "oklch(55% 0.05 264)" }} />
+            </div>
+            <p className="text-xl font-semibold" style={k.accent ? { color: GOLD } : {}}>{k.value}</p>
           </div>
         ))}
       </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} /></div>
-      ) : (
-        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 900 }}>
+      {data.recentUsers && data.recentUsers.length > 0 && (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <div className="px-4 py-3 border-b" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <h3 className="text-sm font-semibold">Ultimi 10 utenti registrati</h3>
+          </div>
+          <table className="w-full text-sm">
             <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-                {["Nome", "Email", "Azienda", "Ruolo", "Stato", "Verificato", "Registrato", "Ultimo accesso", "Azioni"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>{h}</th>
-                ))}
+              <tr className="border-b text-xs text-muted-foreground" style={{ borderColor: BORDER }}>
+                <th className="text-left px-4 py-2 font-medium">Nome</th>
+                <th className="text-left px-4 py-2 font-medium">Email</th>
+                <th className="text-left px-4 py-2 font-medium">Ruolo</th>
+                <th className="text-left px-4 py-2 font-medium">Registrato</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((u, i) => (
-                <tr key={u.id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <td style={{ padding: "10px 14px", color: TEXT, whiteSpace: "nowrap" as const }}>{u.name ?? "—"}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{u.email}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{u.company ?? "—"}</td>
-                  <td style={{ padding: "10px 14px" }}>
-                    <select value={u.role} onChange={e => updateRole.mutate({ userId: u.id, role: e.target.value as "user" | "admin" | "superadmin" })} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "3px 8px", color: TEXT, fontSize: 12 }}>
+              {data.recentUsers.map((u: { id: number; name: string | null; email: string | null; role: string; status: string; createdAt: Date }) => (
+                <tr key={u.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                  <td className="px-4 py-2.5 font-medium">{u.name ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{u.email}</td>
+                  <td className="px-4 py-2.5"><Badge label={u.role} color={u.role === "superadmin" ? GOLD : u.role === "admin" ? "oklch(60% 0.18 220)" : "oklch(55% 0.05 264)"} /></td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(u.createdAt).toLocaleDateString("it-IT")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionUsers() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState<"all" | "user" | "admin" | "superadmin">("all");
+  const [status, setStatus] = useState<"all" | "active" | "suspended" | "pending">("all");
+  const LIMIT = 25;
+  const { data, isLoading, refetch } = trpc.superadmin.listUsersPaged.useQuery({ page, limit: LIMIT, search: search || undefined, role, status });
+  const updateRole = trpc.superadmin.updateUserRole.useMutation({ onSuccess: () => { toast.success("Ruolo aggiornato"); refetch(); } });
+  const updateStatus = trpc.superadmin.updateUserStatus.useMutation({ onSuccess: () => { toast.success("Stato aggiornato"); refetch(); } });
+  const deleteUser = trpc.superadmin.deleteUser.useMutation({ onSuccess: () => { toast.success("Utente eliminato"); refetch(); } });
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Cerca nome o email…"
+          className="h-8 px-3 rounded-lg border text-sm bg-transparent outline-none focus:border-amber-500/50 transition-colors"
+          style={{ borderColor: BORDER, minWidth: 200 }} />
+        <select value={role} onChange={e => { setRole(e.target.value as typeof role); setPage(1); }}
+          className="h-8 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none"
+          style={{ borderColor: BORDER }}>
+          <option value="all">Tutti i ruoli</option>
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+          <option value="superadmin">SuperAdmin</option>
+        </select>
+        <select value={status} onChange={e => { setStatus(e.target.value as typeof status); setPage(1); }}
+          className="h-8 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none"
+          style={{ borderColor: BORDER }}>
+          <option value="all">Tutti gli stati</option>
+          <option value="active">Attivo</option>
+          <option value="suspended">Sospeso</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+                <th className="text-left px-4 py-2.5 font-medium">ID</th>
+                <th className="text-left px-4 py-2.5 font-medium">Nome</th>
+                <th className="text-left px-4 py-2.5 font-medium">Email</th>
+                <th className="text-left px-4 py-2.5 font-medium">Ruolo</th>
+                <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+                <th className="text-left px-4 py-2.5 font-medium">Registrato</th>
+                <th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data?.rows.map(u => (
+                <tr key={u.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                  <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">#{u.id}</td>
+                  <td className="px-4 py-2.5 font-medium">{u.name ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{u.email}</td>
+                  <td className="px-4 py-2.5">
+                    <select value={u.role} onChange={e => updateRole.mutate({ userId: u.id, role: e.target.value as "user" | "admin" | "superadmin" })}
+                      className="h-7 px-2 rounded border text-xs bg-[oklch(10%_0.006_264)] outline-none"
+                      style={{ borderColor: BORDER }}>
                       <option value="user">user</option>
                       <option value="admin">admin</option>
                       <option value="superadmin">superadmin</option>
                     </select>
                   </td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={u.status} /></td>
-                  <td style={{ padding: "10px 14px" }}>
-                    {u.emailVerified ? <Check className="h-4 w-4" style={{ color: "oklch(70% 0.18 145)" }} /> : <X className="h-4 w-4" style={{ color: "oklch(65% 0.18 25)" }} />}
+                  <td className="px-4 py-2.5">
+                    <Badge label={u.status} color={u.status === "active" ? "oklch(60% 0.18 145)" : u.status === "suspended" ? "oklch(55% 0.22 25)" : GOLD} />
                   </td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(u.createdAt).toLocaleDateString("it-IT")}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{u.lastSignedIn ? new Date(u.lastSignedIn).toLocaleDateString("it-IT") : "—"}</td>
-                  <td style={{ padding: "10px 14px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button title={u.status === "active" ? "Sospendi" : "Attiva"} onClick={() => updateStatus.mutate({ userId: u.id, status: u.status === "active" ? "suspended" : "active" })} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: MUTED }}>
-                        {u.status === "active" ? <ShieldOff className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-                      </button>
-                      {confirmDelete === u.id ? (
-                        <>
-                          <button onClick={() => deleteUser.mutate({ userId: u.id })} style={{ background: "oklch(25% 0.06 25)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(65% 0.18 25)", fontSize: 11 }}>Conferma</button>
-                          <button onClick={() => setConfirmDelete(null)} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: MUTED, fontSize: 11 }}>Annulla</button>
-                        </>
-                      ) : (
-                        <button onClick={() => setConfirmDelete(u.id)} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "oklch(65% 0.18 25)" }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(u.createdAt).toLocaleDateString("it-IT")}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-1">
+                      {u.status === "active"
+                        ? <button onClick={() => updateStatus.mutate({ userId: u.id, status: "suspended" })} className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-red-500/10" style={{ borderColor: BORDER, color: "oklch(55% 0.22 25)" }}>Sospendi</button>
+                        : <button onClick={() => updateStatus.mutate({ userId: u.id, status: "active" })} className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-green-500/10" style={{ borderColor: BORDER, color: "oklch(60% 0.18 145)" }}>Attiva</button>
+                      }
+                      <button onClick={() => { if (confirm("Eliminare utente?")) deleteUser.mutate({ userId: u.id }); }}
+                        className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-red-500/10" style={{ borderColor: BORDER, color: "oklch(55% 0.22 25)" }}>Elimina</button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
-                <tr><td colSpan={9} style={{ padding: "32px", textAlign: "center" as const, color: MUTED }}>Nessun utente trovato</td></tr>
+              {(!data?.rows || data.rows.length === 0) && (
+                <tr><td colSpan={7} className="text-center py-10 text-muted-foreground text-sm">Nessun utente trovato</td></tr>
               )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {pages > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "6px 10px", cursor: page === 1 ? "not-allowed" : "pointer", color: page === 1 ? MUTED : TEXT }}>
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          {Array.from({ length: Math.min(7, pages) }, (_, i) => {
-            const p = pages <= 7 ? i + 1 : page <= 4 ? i + 1 : page >= pages - 3 ? pages - 6 + i : page - 3 + i;
-            return <button key={p} onClick={() => setPage(p)} style={{ background: p === page ? GOLD_DIM : CARD, border: `1px solid ${p === page ? GOLD : BORDER}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer", color: p === page ? GOLD : TEXT, fontSize: 13, fontWeight: p === page ? 700 : 400 }}>{p}</button>;
-          })}
-          <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "6px 10px", cursor: page === pages ? "not-allowed" : "pointer", color: page === pages ? MUTED : TEXT }}>
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          <span style={{ color: MUTED, fontSize: 12 }}>Pagina {page} di {pages} ({total} totali)</span>
+          {data && <div className="px-4"><Pagination page={page} pages={data.pages} total={data.total} limit={LIMIT} onPage={setPage} /></div>}
         </div>
       )}
     </div>
   );
 }
 
-function TabEmail() {
+function SectionAllProjects() {
+  const { data, isLoading } = trpc.superadmin.allProjects.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={FolderOpen} text="Nessun progetto presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Progetto</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Priorità</th>
+            <th className="text-left px-4 py-2.5 font-medium">Creato</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.project.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-medium">{row.project.name}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5"><Badge label={row.project.status} color={row.project.status === "in_progress" ? GOLD : row.project.status === "completed" ? "oklch(60% 0.18 145)" : "oklch(55% 0.05 264)"} /></td>
+              <td className="px-4 py-2.5"><Badge label={row.project.priority} color={row.project.priority === "high" ? "oklch(55% 0.22 25)" : row.project.priority === "medium" ? GOLD : "oklch(55% 0.05 264)"} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.project.createdAt).toLocaleDateString("it-IT")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllTickets() {
+  const { data, isLoading } = trpc.superadmin.allTickets.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Ticket} text="Nessun ticket presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Ticket</th>
+            <th className="text-left px-4 py-2.5 font-medium">Oggetto</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-left px-4 py-2.5 font-medium">Priorità</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Creato</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.ticket.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.ticket.ticketNumber}</td>
+              <td className="px-4 py-2.5 font-medium max-w-xs truncate">{row.ticket.subject}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5"><Badge label={row.ticket.priority} color={row.ticket.priority === "critical" ? "oklch(55% 0.22 25)" : row.ticket.priority === "high" ? "oklch(60% 0.2 35)" : GOLD} /></td>
+              <td className="px-4 py-2.5"><Badge label={row.ticket.status} color={row.ticket.status === "open" ? "oklch(60% 0.18 220)" : row.ticket.status === "resolved" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.ticket.createdAt).toLocaleDateString("it-IT")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllInvoices() {
+  const { data, isLoading } = trpc.superadmin.allInvoices.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Receipt} text="Nessuna fattura presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Numero</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-right px-4 py-2.5 font-medium">Importo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Scadenza</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.invoice.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-mono text-xs">{row.invoice.invoiceNumber}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5 text-right font-semibold" style={{ color: GOLD }}>€{parseFloat(row.invoice.amount).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
+              <td className="px-4 py-2.5"><Badge label={row.invoice.status} color={row.invoice.status === "paid" ? "oklch(60% 0.18 145)" : row.invoice.status === "overdue" ? "oklch(55% 0.22 25)" : GOLD} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.invoice.due).toLocaleDateString("it-IT")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllContracts() {
+  const { data, isLoading } = trpc.superadmin.allContracts.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={FileText} text="Nessun contratto presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Contratto</th>
+            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Scadenza</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.contract.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-medium">{row.contract.contractName}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.contract.type}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5"><Badge label={row.contract.status} color={row.contract.status === "active" ? "oklch(60% 0.18 145)" : row.contract.status === "expired" ? "oklch(55% 0.22 25)" : GOLD} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.contract.endDate ? new Date(row.contract.endDate).toLocaleDateString("it-IT") : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllDocuments() {
+  const { data, isLoading } = trpc.superadmin.allDocuments.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Layers} text="Nessun documento presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
+            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Caricato</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.document.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-medium">{row.document.name}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.document.type ?? "—"}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5"><Badge label={row.document.status} color={row.document.status === "final" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.document.createdAt).toLocaleDateString("it-IT")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAffiliates() {
+  const { data, isLoading, refetch } = trpc.superadmin.affiliateList.useQuery();
+  const action = trpc.superadmin.affiliateAction.useMutation({ onSuccess: () => { toast.success("Azione eseguita"); refetch(); } });
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.profiles.length === 0) return <EmptyState icon={Link2} text="Nessun affiliato presente" />;
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Affiliati</p>
+          <p className="text-2xl font-semibold">{data.profiles.length}</p>
+        </div>
+        <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Conversioni</p>
+          <p className="text-2xl font-semibold">{data.stats.totalConversions}</p>
+        </div>
+        <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.3)" }}>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Payout Pending (€)</p>
+          <p className="text-2xl font-semibold" style={{ color: GOLD }}>{parseFloat(data.stats.pendingPayouts || "0").toLocaleString("it-IT")}</p>
+        </div>
+      </div>
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Codice</th>
+              <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+              <th className="text-left px-4 py-2.5 font-medium">Commissione</th>
+              <th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+              {data.profiles.map((p: { id: number; affiliateCode: string; status: string; commissionRate?: string | null }) => (
+              <tr key={p.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-mono text-xs">{p.affiliateCode}</td>
+                <td className="px-4 py-2.5"><Badge label={p.status} color={p.status === "active" ? "oklch(60% 0.18 145)" : p.status === "pending" ? GOLD : "oklch(55% 0.22 25)"} /></td>
+                <td className="px-4 py-2.5 text-xs">{p.commissionRate ?? "—"}%</td>
+                <td className="px-4 py-2.5">
+                  <div className="flex gap-1">
+                    {p.status === "pending" && <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} className="text-[10px] px-2 py-1 rounded border" style={{ borderColor: "oklch(60% 0.18 145)40", color: "oklch(60% 0.18 145)" }}>Approva</button>}
+                    {p.status === "active" && <button onClick={() => action.mutate({ affiliateId: p.id, action: "suspend" })} className="text-[10px] px-2 py-1 rounded border" style={{ borderColor: "oklch(55% 0.22 25)40", color: "oklch(55% 0.22 25)" }}>Sospendi</button>}
+                    {p.status !== "active" && p.status !== "pending" && <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} className="text-[10px] px-2 py-1 rounded border" style={{ borderColor: GOLD + "40", color: GOLD }}>Riattiva</button>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SectionEmail() {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [bulkFilter, setBulkFilter] = useState<"all" | "user" | "admin" | "active" | "pending">("all");
-  const [bulkSubject, setBulkSubject] = useState("");
-  const [bulkBody, setBulkBody] = useState("");
-  const [activeForm, setActiveForm] = useState<"single" | "bulk">("single");
-
-  const { data: history, refetch: refetchHistory } = trpc.superadmin.emailHistory.useQuery();
-  const sendSingle = trpc.superadmin.sendEmail.useMutation({
-    onSuccess: (r) => { toast.success(r.ok ? "Email inviata" : `Errore: ${r.error}`); refetchHistory(); setTo(""); setSubject(""); setBody(""); },
-    onError: e => toast.error(e.message),
-  });
-  const sendBulk = trpc.superadmin.sendBulkEmail.useMutation({
-    onSuccess: (r) => { toast.success(`Inviate: ${r.sent} / Fallite: ${r.failed}`); refetchHistory(); setBulkSubject(""); setBulkBody(""); },
-    onError: e => toast.error(e.message),
-  });
-
-  const inputStyle = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "9px 12px", color: TEXT, fontSize: 13, width: "100%" };
-
+  const [bulkFilter, setBulkFilter] = useState<"all" | "active" | "admin">("all");
+  const { data: history, isLoading: histLoading, refetch } = trpc.superadmin.emailHistory.useQuery();
+  const send = trpc.superadmin.sendEmail.useMutation({ onSuccess: () => { toast.success("Email inviata"); setTo(""); setSubject(""); setBody(""); refetch(); } });
+  const bulk = trpc.superadmin.sendBulkEmail.useMutation({ onSuccess: (r) => { toast.success(`Inviata a ${r.sent}/${r.total} destinatari`); refetch(); } });
   return (
     <div className="space-y-6">
-      <div style={{ display: "flex", gap: 8 }}>
-        {(["single", "bulk"] as const).map(f => (
-          <button key={f} onClick={() => setActiveForm(f)} style={{ background: activeForm === f ? GOLD_DIM : CARD, border: `1px solid ${activeForm === f ? GOLD : BORDER}`, borderRadius: 8, padding: "8px 18px", color: activeForm === f ? GOLD : MUTED, fontSize: 13, cursor: "pointer", fontWeight: activeForm === f ? 700 : 400 }}>
-            {f === "single" ? "Email Singola" : "Email di Massa"}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-xl border p-5 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <h3 className="text-sm font-semibold">Email Singola</h3>
+          <input value={to} onChange={e => setTo(e.target.value)} placeholder="Destinatario email" className="w-full h-9 px-3 rounded-lg border text-sm bg-transparent outline-none focus:border-amber-500/50" style={{ borderColor: BORDER }} />
+          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Oggetto" className="w-full h-9 px-3 rounded-lg border text-sm bg-transparent outline-none focus:border-amber-500/50" style={{ borderColor: BORDER }} />
+          <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Corpo del messaggio…" rows={5} className="w-full px-3 py-2 rounded-lg border text-sm bg-transparent outline-none resize-none focus:border-amber-500/50" style={{ borderColor: BORDER }} />
+          <button onClick={() => send.mutate({ to, subject, body })} disabled={send.isPending || !to || !subject || !body}
+            className="h-9 px-4 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+            style={{ background: GOLD, color: "#000" }}>
+            {send.isPending ? "Invio…" : "Invia Email"}
           </button>
+        </div>
+        <div className="rounded-xl border p-5 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <h3 className="text-sm font-semibold">Email Bulk</h3>
+          <select value={bulkFilter} onChange={e => setBulkFilter(e.target.value as typeof bulkFilter)} className="w-full h-9 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+            <option value="all">Tutti gli utenti</option>
+            <option value="active">Solo utenti attivi</option>
+            <option value="admin">Solo admin/superadmin</option>
+          </select>
+          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Oggetto" className="w-full h-9 px-3 rounded-lg border text-sm bg-transparent outline-none focus:border-amber-500/50" style={{ borderColor: BORDER }} />
+          <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Corpo del messaggio…" rows={5} className="w-full px-3 py-2 rounded-lg border text-sm bg-transparent outline-none resize-none focus:border-amber-500/50" style={{ borderColor: BORDER }} />
+          <button onClick={() => bulk.mutate({ filter: bulkFilter, subject, body })} disabled={bulk.isPending || !subject || !body}
+            className="h-9 px-4 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+            style={{ background: GOLD, color: "#000" }}>
+            {bulk.isPending ? "Invio…" : "Invia Bulk"}
+          </button>
+        </div>
+      </div>
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+        <div className="px-4 py-3 border-b" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+          <h3 className="text-sm font-semibold">Storico Invii</h3>
+        </div>
+        {histLoading ? <div className="flex items-center justify-center h-20"><Loader2 className="h-4 w-4 animate-spin" style={{ color: GOLD }} /></div> : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground" style={{ borderColor: BORDER }}>
+                <th className="text-left px-4 py-2 font-medium">A</th>
+                <th className="text-left px-4 py-2 font-medium">Oggetto</th>
+                <th className="text-left px-4 py-2 font-medium">Stato</th>
+                <th className="text-left px-4 py-2 font-medium">Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history?.map((h: { id: number; toEmail: string; subject: string; status: string; createdAt: Date }) => (
+                <tr key={h.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                  <td className="px-4 py-2 text-xs text-muted-foreground max-w-xs truncate">{h.toEmail}</td>
+                  <td className="px-4 py-2 text-xs max-w-xs truncate">{h.subject}</td>
+                  <td className="px-4 py-2"><Badge label={h.status} color={h.status === "sent" ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground">{new Date(h.createdAt).toLocaleString("it-IT")}</td>
+                </tr>
+              ))}
+              {(!history || history.length === 0) && <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">Nessun invio registrato</td></tr>}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SectionSystem() {
+  const { data: env } = trpc.superadmin.envStatus.useQuery();
+  const { data: db } = trpc.superadmin.dbStats.useQuery();
+  const { data: audit } = trpc.superadmin.auditLogList.useQuery();
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-xl border p-5" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <h3 className="text-sm font-semibold mb-4">Variabili d'Ambiente</h3>
+          <div className="space-y-2">
+            {env?.map((e: { key: string; configured: boolean }) => (
+              <div key={e.key} className="flex items-center justify-between text-xs">
+                <span className="font-mono text-muted-foreground">{e.key}</span>
+                <Badge label={e.configured ? "OK" : "MANCANTE"} color={e.configured ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border p-5" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <h3 className="text-sm font-semibold mb-4">Statistiche Database</h3>
+          <div className="space-y-2">
+            {db?.map((row: { table: string; count: number }) => (
+              <div key={row.table} className="flex items-center justify-between text-xs">
+                <span className="font-mono text-muted-foreground">{row.table}</span>
+                <span className="font-semibold">{row.count.toLocaleString("it-IT")}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+        <div className="px-4 py-3 border-b" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+          <h3 className="text-sm font-semibold">Audit Log (ultimi 50)</h3>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-xs text-muted-foreground" style={{ borderColor: BORDER }}>
+              <th className="text-left px-4 py-2 font-medium">Azione</th>
+              <th className="text-left px-4 py-2 font-medium">Utente</th>
+              <th className="text-left px-4 py-2 font-medium">IP</th>
+              <th className="text-left px-4 py-2 font-medium">Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {audit?.map((a: { id: number; action: string; userId: number | null; ipAddress: string | null; createdAt: Date }) => (
+              <tr key={a.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2 text-xs font-mono">{a.action}</td>
+                <td className="px-4 py-2 text-xs text-muted-foreground">#{a.userId ?? "—"}</td>
+                <td className="px-4 py-2 text-xs text-muted-foreground">{a.ipAddress ?? "—"}</td>
+                <td className="px-4 py-2 text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleString("it-IT")}</td>
+              </tr>
+            ))}
+            {(!audit || audit.length === 0) && <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-sm">Nessun evento registrato</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SectionAllWallets() {
+  const { data, isLoading } = trpc.superadmin.allWallets.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Wallet} text="Nessun wallet presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Indirizzo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-left px-4 py-2.5 font-medium">Creato</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.wallet.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.wallet.address}</td>
+              <td className="px-4 py-2.5 text-xs">{row.wallet.network}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.wallet.createdAt).toLocaleDateString("it-IT")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllSmartContracts() {
+  const { data, isLoading } = trpc.superadmin.allSmartContracts.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Box} text="Nessun smart contract presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
+            <th className="text-left px-4 py-2.5 font-medium">Indirizzo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.sc.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-medium">{row.sc.name}</td>
+              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.sc.address}</td>
+              <td className="px-4 py-2.5"><Badge label={row.sc.status} color={row.sc.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllDomains() {
+  const { data, isLoading } = trpc.superadmin.allDomains.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Globe} text="Nessun dominio presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Dominio</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">SSL</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.domain.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-mono text-xs">{row.domain.domainName}</td>
+              <td className="px-4 py-2.5"><Badge label={row.domain.status} color={row.domain.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+              <td className="px-4 py-2.5"><Badge label={row.domain.sslStatus} color={row.domain.sslStatus === "valid" ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllAI() {
+  const { data, isLoading } = trpc.superadmin.allAiProjects.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Bot} text="Nessun progetto AI presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
+            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.ai.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-medium">{row.ai.name}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.ai.environment}</td>
+              <td className="px-4 py-2.5"><Badge label={row.ai.status} color={row.ai.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionAllApiKeys() {
+  const { data, isLoading } = trpc.superadmin.allApiKeys.useQuery();
+  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!data || data.length === 0) return <EmptyState icon={Key} text="Nessuna API key presente" />;
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
+            <th className="text-left px-4 py-2.5 font-medium">Prefisso</th>
+            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+            <th className="text-left px-4 py-2.5 font-medium">Creata</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={row.key.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+              <td className="px-4 py-2.5 font-medium">{row.key.name}</td>
+              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.key.keyPrefix}…</td>
+              <td className="px-4 py-2.5"><Badge label={row.key.revokedAt ? "revocata" : "attiva"} color={!row.key.revokedAt ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.key.createdAt).toLocaleDateString("it-IT")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SectionBlockchain() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { label: "Chain ID", value: "24589" },
+          { label: "Nome", value: "DYNEROS Chain" },
+          { label: "Valuta", value: "DYN" },
+          { label: "RPC", value: "https://mainnet.dyneros.com" },
+          { label: "Explorer", value: "https://explorer.dyneros.com" },
+          { label: "Wallet", value: "https://wallet.dyneros.com" },
+        ].map(item => (
+          <div key={item.label} className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{item.label}</p>
+            <p className="text-sm font-mono font-medium truncate">{item.value}</p>
+          </div>
         ))}
       </div>
-
-      {activeForm === "single" ? (
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }} className="space-y-3">
-          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Invia Email Singola</div>
-          <input value={to} onChange={e => setTo(e.target.value)} placeholder="Destinatario (email)" style={inputStyle} />
-          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Oggetto" style={inputStyle} />
-          <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Corpo del messaggio" rows={6} style={{ ...inputStyle, resize: "vertical" as const }} />
-          <button onClick={() => sendSingle.mutate({ to, subject, body })} disabled={sendSingle.isPending || !to || !subject || !body} style={{ background: GOLD_DIM, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "9px 20px", color: GOLD, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            {sendSingle.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Invia
-          </button>
-        </div>
-      ) : (
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }} className="space-y-3">
-          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Invia Email di Massa</div>
-          <select value={bulkFilter} onChange={e => setBulkFilter(e.target.value as typeof bulkFilter)} style={inputStyle}>
-            <option value="all">Tutti gli utenti</option>
-            <option value="user">Solo utenti (ruolo user)</option>
-            <option value="admin">Solo admin</option>
-            <option value="active">Solo utenti attivi</option>
-            <option value="pending">Solo utenti in attesa</option>
-          </select>
-          <input value={bulkSubject} onChange={e => setBulkSubject(e.target.value)} placeholder="Oggetto" style={inputStyle} />
-          <textarea value={bulkBody} onChange={e => setBulkBody(e.target.value)} placeholder="Corpo del messaggio" rows={6} style={{ ...inputStyle, resize: "vertical" as const }} />
-          <button onClick={() => sendBulk.mutate({ filter: bulkFilter, subject: bulkSubject, body: bulkBody })} disabled={sendBulk.isPending || !bulkSubject || !bulkBody} style={{ background: GOLD_DIM, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "9px 20px", color: GOLD, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            {sendBulk.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Invia a tutti
-          </button>
-        </div>
-      )}
-
-      <div>
-        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10 }}>Storico invii (ultimi 50)</div>
-        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 700 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-                {["Data", "Destinatario", "Oggetto", "Tipo", "Stato"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(history ?? []).map((h, i) => (
-                <tr key={h.id} style={{ borderBottom: i < (history?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(h.createdAt).toLocaleString("it-IT")}</td>
-                  <td style={{ padding: "10px 14px", color: TEXT, fontSize: 12 }}>{h.toEmail}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{h.subject}</td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={h.isBulk ? "bulk" : "single"} /></td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={h.status} /></td>
-                </tr>
-              ))}
-              {(history ?? []).length === 0 && (
-                <tr><td colSpan={5} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessun invio registrato</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
 
-function TabSystem() {
-  const { data: envStatus } = trpc.superadmin.envStatus.useQuery();
-  const { data: auditLogs } = trpc.superadmin.auditLogList.useQuery();
-  const { data: dbStats } = trpc.superadmin.dbStats.useQuery();
-  const { data: smtpConf } = trpc.email.smtpConfig.useQuery();
-
-  return (
-    <div className="space-y-6">
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18 }}>
-          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Variabili d'ambiente</div>
-          <div className="space-y-2">
-            {(envStatus ?? []).map(e => (
-              <div key={e.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: MUTED, fontFamily: "monospace" }}>{e.key}</span>
-                {e.configured
-                  ? <span style={{ color: "oklch(70% 0.18 145)", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}><Check className="h-3.5 w-3.5" /> Configurato</span>
-                  : <span style={{ color: "oklch(65% 0.18 25)", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}><X className="h-3.5 w-3.5" /> Mancante</span>}
-              </div>
-            ))}
-          </div>
-          {smtpConf && (
-            <div style={{ marginTop: 14, padding: "10px 12px", background: smtpConf.configured ? "oklch(20% 0.05 145)" : "oklch(20% 0.05 25)", borderRadius: 8, fontSize: 12 }}>
-              <span style={{ color: smtpConf.configured ? "oklch(70% 0.18 145)" : "oklch(65% 0.18 25)", fontWeight: 600 }}>
-                SMTP: {smtpConf.configured ? `✅ Configurato (host: ${smtpConf.host})` : "❌ Non configurato"}
-              </span>
-            </div>
-          )}
-        </div>
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18 }}>
-          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Statistiche Database</div>
-          <div className="space-y-1.5">
-            {(dbStats ?? []).map(d => (
-              <div key={d.table} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: MUTED, fontFamily: "monospace", fontSize: 12 }}>{d.table}</span>
-                <span style={{ color: GOLD, fontWeight: 700 }}>{d.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10 }}>Audit Log (ultimi 50 eventi)</div>
-        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 600 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-                {["Data", "Utente ID", "Azione", "Risorsa", "IP"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(auditLogs ?? []).map((a, i) => (
-                <tr key={a.id} style={{ borderBottom: i < (auditLogs?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(a.createdAt).toLocaleString("it-IT")}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED }}>{a.userId ?? "—"}</td>
-                  <td style={{ padding: "10px 14px", color: TEXT }}>{a.action}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED }}>{a.resource ?? "—"}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{a.ipAddress ?? "—"}</td>
-                </tr>
-              ))}
-              {(auditLogs ?? []).length === 0 && (
-                <tr><td colSpan={5} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessun evento registrato</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+function SectionPlaceholder({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return <EmptyState icon={Icon} text={`${title} — Nessun dato disponibile`} />;
 }
 
-function TabAffiliates() {
-  const { data, isLoading, refetch } = trpc.superadmin.affiliateList.useQuery();
-  const { data: conversions } = trpc.superadmin.recentConversions.useQuery();
-  const action = trpc.superadmin.affiliateAction.useMutation({
-    onSuccess: () => { refetch(); toast.success("Azione completata"); },
-    onError: e => toast.error(e.message),
-  });
-  const profiles = data?.profiles ?? [];
-  const stats = data?.stats;
-
-  return (
-    <div className="space-y-6">
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-        <KpiCard label="Profili Totali" value={profiles.length} />
-        <KpiCard label="Conversioni Totali" value={stats?.totalConversions ?? 0} />
-        <KpiCard label="Payout in Sospeso" value={`€${Number(stats?.pendingPayouts ?? 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })}`} />
-      </div>
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} /></div>
-      ) : (
-        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 800 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-                {["Nome", "Email", "Tipo", "Codice", "Stato", "Registrato", "Azioni"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {profiles.map((p, i) => (
-                <tr key={p.id} style={{ borderBottom: i < profiles.length - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <td style={{ padding: "10px 14px", color: TEXT }}>{p.fullName}</td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{p.email}</td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={p.type} /></td>
-                  <td style={{ padding: "10px 14px", color: GOLD, fontFamily: "monospace", fontSize: 12 }}>{p.affiliateCode}</td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={p.status} /></td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(p.createdAt).toLocaleDateString("it-IT")}</td>
-                  <td style={{ padding: "10px 14px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {p.status === "pending" && (
-                        <>
-                          <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} style={{ background: "oklch(20% 0.05 145)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(70% 0.18 145)", fontSize: 11 }}>Approva</button>
-                          <button onClick={() => action.mutate({ affiliateId: p.id, action: "reject" })} style={{ background: "oklch(20% 0.05 25)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(65% 0.18 25)", fontSize: 11 }}>Rifiuta</button>
-                        </>
-                      )}
-                      {p.status === "active" && (
-                        <button onClick={() => action.mutate({ affiliateId: p.id, action: "suspend" })} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: MUTED, fontSize: 11 }}>Sospendi</button>
-                      )}
-                      {p.status === "suspended" && (
-                        <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} style={{ background: "oklch(20% 0.05 145)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(70% 0.18 145)", fontSize: 11 }}>Riattiva</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {profiles.length === 0 && (
-                <tr><td colSpan={7} style={{ padding: "32px", textAlign: "center" as const, color: MUTED }}>Nessun profilo affiliato</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <div>
-        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10 }}>Conversioni Recenti</div>
-        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 700 }}>
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
-                {["ID", "Categoria", "Valore Netto", "Commissione", "Stato", "Data"].map(h => (
-                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(conversions ?? []).map((c, i) => (
-                <tr key={c.id} style={{ borderBottom: i < (conversions?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>#{c.id}</td>
-                  <td style={{ padding: "10px 14px", color: TEXT }}>{c.serviceCategory}</td>
-                  <td style={{ padding: "10px 14px", color: GOLD, fontWeight: 600 }}>€{Number(c.contractValueNet).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: "10px 14px", color: "oklch(70% 0.18 145)" }}>€{Number(c.commissionAmount).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
-                  <td style={{ padding: "10px 14px" }}><Badge status={c.status} /></td>
-                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(c.createdAt).toLocaleDateString("it-IT")}</td>
-                </tr>
-              ))}
-              {(conversions ?? []).length === 0 && (
-                <tr><td colSpan={6} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessuna conversione</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+function renderSection(section: Section) {
+  switch (section) {
+    case "overview": return <SectionOverview />;
+    case "users": return <SectionUsers />;
+    case "projects": return <SectionAllProjects />;
+    case "tickets": return <SectionAllTickets />;
+    case "invoices": return <SectionAllInvoices />;
+    case "contracts": return <SectionAllContracts />;
+    case "documents": return <SectionAllDocuments />;
+    case "affiliates": return <SectionAffiliates />;
+    case "email": return <SectionEmail />;
+    case "system": return <SectionSystem />;
+    case "blockchain": return <SectionBlockchain />;
+    case "wallets": return <SectionAllWallets />;
+    case "smart-contracts": return <SectionAllSmartContracts />;
+    case "domains": return <SectionAllDomains />;
+    case "ai": return <SectionAllAI />;
+    case "api-keys": return <SectionAllApiKeys />;
+    case "notifications": return <SectionPlaceholder icon={Bell} title="Notifiche Sistema" />;
+    case "settings": return <SectionPlaceholder icon={Settings} title="Impostazioni Piattaforma" />;
+    case "security": return <SectionSystem />;
+    case "email-settings": return <SectionPlaceholder icon={Zap} title="Configurazione Email" />;
+    default: return null;
+  }
 }
 
 export default function SuperAdmin() {
+  const [section, setSection] = useState<Section>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [, setLocation] = useLocation();
-  const [tab, setTab] = useState<Tab>("overview");
-  const { language, setLanguage } = useLanguage();
-  const { data: me, isLoading: meLoading } = trpc.auth.me.useQuery();
   const logout = trpc.auth.logout.useMutation({ onSuccess: () => setLocation("/login") });
 
-  useEffect(() => {
-    if (me && me.role !== "superadmin") setLocation("/dashboard");
-  }, [me]);
-
-  if (meLoading || !me || me.role !== "superadmin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: GOLD }} />
-      </div>
-    );
-  }
-
-  const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "overview", label: "Overview", icon: <BarChart3 className="h-3.5 w-3.5" /> },
-    { key: "users", label: "Utenti", icon: <Users className="h-3.5 w-3.5" /> },
-    { key: "email", label: "Email", icon: <Mail className="h-3.5 w-3.5" /> },
-    { key: "system", label: "Sistema", icon: <Server className="h-3.5 w-3.5" /> },
-    { key: "affiliates", label: "Affiliati", icon: <Award className="h-3.5 w-3.5" /> },
-  ];
+  const groups = Array.from(new Set(NAV_ITEMS.map(i => i.group)));
+  const current = NAV_ITEMS.find(i => i.id === section);
 
   return (
-    <div className="min-h-screen" style={{ background: BG, fontFamily: "'Inter', sans-serif", color: TEXT }}>
-      <header className="sticky top-0 z-50 border-b px-6 h-14 flex items-center justify-between" style={{ background: BG, borderColor: BORDER }}>
-        <div className="flex items-center gap-3">
-          <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
-            <polygon points="16,2 30,10 30,22 16,30 2,22 2,10" stroke={GOLD} strokeWidth="1.5" fill="none" />
-            <polygon points="16,8 24,13 24,19 16,24 8,19 8,13" fill={GOLD} opacity="0.25" />
-            <circle cx="16" cy="16" r="3" fill={GOLD} />
-          </svg>
-          <span className="font-bold text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Dyneros</span>
-          <span style={{ background: GOLD_DIM, color: GOLD, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>SuperAdmin</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setLanguage(language === "it" ? "en" : "it")} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 10px", color: MUTED, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-            <Globe className="h-3.5 w-3.5" />{language.toUpperCase()}
-          </button>
-          <span style={{ color: MUTED, fontSize: 13 }}>{me.email}</span>
-          <button onClick={() => logout.mutate()} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 10px", color: MUTED, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-            <LogOut className="h-3.5 w-3.5" /> Esci
-          </button>
-        </div>
-      </header>
-
-      <div className="flex" style={{ minHeight: "calc(100vh - 56px)" }}>
-        <aside style={{ width: 200, borderRight: `1px solid ${BORDER}`, padding: "20px 12px", flexShrink: 0 }}>
-          {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: "none", background: tab === t.key ? GOLD_DIM : "transparent", color: tab === t.key ? GOLD : MUTED, fontSize: 13, fontWeight: tab === t.key ? 600 : 400, cursor: "pointer", marginBottom: 2, textAlign: "left" as const }}>
-              {t.icon}{t.label}
-            </button>
-          ))}
-        </aside>
-        <main style={{ flex: 1, padding: 28, overflowX: "auto" as const }}>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ color: TEXT, fontSize: 18, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>
-              {TABS.find(t => t.key === tab)?.label}
+    <div className="flex h-screen overflow-hidden" style={{ background: "oklch(8% 0.005 264)", color: "#f9fafb" }}>
+      <aside className="flex flex-col shrink-0 border-r transition-all duration-200"
+        style={{ width: sidebarOpen ? 240 : 56, background: SIDEBAR_BG, borderColor: BORDER }}>
+        <div className="flex items-center gap-2 px-3 h-14 border-b shrink-0" style={{ borderColor: BORDER }}>
+          {sidebarOpen && (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: GOLD_DIM }}>
+                <span className="text-xs font-bold" style={{ color: GOLD }}>SA</span>
+              </div>
+              <span className="text-xs font-semibold truncate">SuperAdmin</span>
             </div>
-          </div>
-          {tab === "overview" && <TabOverview />}
-          {tab === "users" && <TabUsers />}
-          {tab === "email" && <TabEmail />}
-          {tab === "system" && <TabSystem />}
-          {tab === "affiliates" && <TabAffiliates />}
-        </main>
-      </div>
+          )}
+          <button onClick={() => setSidebarOpen(v => !v)} className="h-7 w-7 flex items-center justify-center rounded-lg transition-colors hover:bg-[oklch(15%_0.008_264)] shrink-0">
+            {sidebarOpen ? <X className="h-3.5 w-3.5" /> : <Menu className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+          {groups.map(group => (
+            <div key={group}>
+              {sidebarOpen && <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground px-2 pt-3 pb-1">{group}</p>}
+              {NAV_ITEMS.filter(i => i.group === group).map(item => (
+                <button key={item.id} onClick={() => setSection(item.id)}
+                  className="w-full flex items-center gap-2.5 px-2 h-8 rounded-lg text-xs transition-colors"
+                  style={{
+                    background: section === item.id ? GOLD_DIM : "transparent",
+                    color: section === item.id ? GOLD : "oklch(65% 0.03 264)",
+                    fontWeight: section === item.id ? 600 : 400,
+                  }}>
+                  <item.icon className="h-3.5 w-3.5 shrink-0" />
+                  {sidebarOpen && <span className="truncate">{item.label}</span>}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <div className="border-t p-2 shrink-0" style={{ borderColor: BORDER }}>
+          <button onClick={() => logout.mutate()}
+            className="w-full flex items-center gap-2.5 px-2 h-8 rounded-lg text-xs transition-colors hover:bg-[oklch(15%_0.008_264)]"
+            style={{ color: "oklch(55% 0.22 25)" }}>
+            <LogOut className="h-3.5 w-3.5 shrink-0" />
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <header className="flex items-center gap-3 px-6 h-14 border-b shrink-0" style={{ background: SIDEBAR_BG, borderColor: BORDER }}>
+          <h1 className="text-sm font-semibold">{current?.label ?? "SuperAdmin"}</h1>
+          <span className="text-xs text-muted-foreground ml-auto">Dyneros Platform Control</span>
+        </header>
+        <div className="flex-1 overflow-y-auto p-6">
+          {renderSection(section)}
+        </div>
+      </main>
     </div>
   );
 }

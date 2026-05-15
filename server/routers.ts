@@ -230,10 +230,10 @@ export const appRouter = router({
           activeProjects: pRows[0]?.c ?? 0,
           openTickets: tRows[0]?.c ?? 0,
           pendingInvoices: iRows[0]?.c ?? 0,
-          activeServices: 8,
+          activeServices: scRows[0]?.c ?? 0,
           deployedContracts: scRows[0]?.c ?? 0,
           completedTasksMonth: 0,
-          onlineEnvironments: 3,
+          onlineEnvironments: wRows[0]?.c ?? 0,
           connectedWallets: wRows[0]?.c ?? 0,
           documentsShared: dRows[0]?.c ?? 0,
         };
@@ -252,12 +252,12 @@ export const appRouter = router({
       return {
         customerId, tier,
         accountStatus: "active" as const,
-        accountManager: { name: "Alessia Romano", email: "a.romano@dyneros.com", role: "Account Manager" },
-        techLead: { name: "Marco Ferretti", email: "m.ferretti@dyneros.com", role: "Technical Lead" },
+        accountManager: { name: "Dyneros Support", email: "support@dyneros.com", role: "Account Manager" },
+        techLead: { name: "Dyneros Tech", email: "tech@dyneros.com", role: "Technical Lead" },
         lastLogin: new Date(),
         kpi,
         recentActivity,
-        nextMilestone: { name: "dUSD Mainnet Launch", project: "PRJ-2026-0002", date: "2026-05-15", daysLeft: 38 },
+        nextMilestone: null,
         criticalTickets,
       };
     }),
@@ -1060,8 +1060,77 @@ export const appRouter = router({
         activeProjects: projectRows[0]?.c ?? 0,
         recentUsers: recentUsersRows,
       };
+     }),
+
+    allProjects: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ project: projects, userName: users.name, userEmail: users.email }).from(projects).leftJoin(users, eq(projects.userId, users.id)).orderBy(desc(projects.createdAt));
+    }),
+
+    allTickets: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ ticket: tickets, userName: users.name, userEmail: users.email }).from(tickets).leftJoin(users, eq(tickets.userId, users.id)).orderBy(desc(tickets.createdAt));
+    }),
+
+    allInvoices: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ invoice: invoices, userName: users.name, userEmail: users.email }).from(invoices).leftJoin(users, eq(invoices.userId, users.id)).orderBy(desc(invoices.createdAt));
+    }),
+
+    allContracts: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ contract: contracts, userName: users.name, userEmail: users.email }).from(contracts).leftJoin(users, eq(contracts.userId, users.id)).orderBy(desc(contracts.createdAt));
+    }),
+
+    allDocuments: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ document: documents, userName: users.name, userEmail: users.email }).from(documents).leftJoin(users, eq(documents.userId, users.id)).orderBy(desc(documents.createdAt));
+    }),
+
+    allWallets: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ wallet: wallets, userName: users.name, userEmail: users.email }).from(wallets).leftJoin(users, eq(wallets.userId, users.id)).orderBy(desc(wallets.createdAt));
+    }),
+
+    allSmartContracts: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ sc: smartContracts, userName: users.name, userEmail: users.email }).from(smartContracts).leftJoin(users, eq(smartContracts.userId, users.id)).orderBy(desc(smartContracts.createdAt));
+    }),
+
+    allDomains: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ domain: domains, userName: users.name, userEmail: users.email }).from(domains).leftJoin(users, eq(domains.userId, users.id)).orderBy(desc(domains.createdAt));
+    }),
+
+    allAiProjects: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ ai: aiProjects, userName: users.name, userEmail: users.email }).from(aiProjects).leftJoin(users, eq(aiProjects.userId, users.id)).orderBy(desc(aiProjects.createdAt));
+    }),
+
+    allApiKeys: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select({ key: apiKeys, userName: users.name, userEmail: users.email }).from(apiKeys).leftJoin(users, eq(apiKeys.userId, users.id)).orderBy(desc(apiKeys.createdAt));
     }),
   }),
 });
-
 export type AppRouter = typeof appRouter;

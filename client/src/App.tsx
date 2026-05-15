@@ -49,20 +49,31 @@ import EmbedBannerSquare from "./pages/EmbedBannerSquare";
 import EmbedBannerSocial from "./pages/EmbedBannerSocial";
 import EmbedBannerVertical from "./pages/EmbedBannerVertical";
 
-function SuperAdminRoute({ component: Component }: { component: React.ComponentType }) {
-  const { data: user, isLoading } = trpc.auth.me.useQuery();
-  if (isLoading) return null;
-  if (!user) return <Redirect to="/login" />;
-  if (user.role !== "superadmin") return <Redirect to="/dashboard" />;
-  return <Component />;
+const GOLD = "oklch(68% 0.19 72)";
+
+function FullPageSpinner() {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "oklch(8% 0.006 264)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 32, height: 32, border: `3px solid ${GOLD}20`, borderTop: `3px solid ${GOLD}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 }
 
-function UserRoute({ component: Component }: { component: React.ComponentType }) {
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = trpc.auth.me.useQuery();
-  if (isLoading) return null;
+  if (isLoading) return <FullPageSpinner />;
+  if (!user) return <Redirect to="/login" />;
+  if (user.role !== "superadmin") return <Redirect to="/dashboard" />;
+  return <>{children}</>;
+}
+
+function UserRoute({ children }: { children: React.ReactNode }) {
+  const { data: user, isLoading } = trpc.auth.me.useQuery();
+  if (isLoading) return <FullPageSpinner />;
   if (!user) return <Redirect to="/login" />;
   if (user.role === "superadmin") return <Redirect to="/superadmin" />;
-  return <Component />;
+  return <>{children}</>;
 }
 
 function Router() {
@@ -73,28 +84,28 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/superadmin">{() => <SuperAdminRoute component={SuperAdmin} />}</Route>
-      <Route path="/super-admin">{() => <SuperAdminRoute component={SuperAdmin} />}</Route>
       <Route path="/verify-email" component={VerifyEmail} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/dashboard/projects" component={DashProjects} />
-      <Route path="/dashboard/tickets" component={DashTickets} />
-      <Route path="/dashboard/documents" component={DashDocuments} />
-      <Route path="/dashboard/contracts" component={DashContracts} />
-      <Route path="/dashboard/invoices" component={DashInvoices} />
-      <Route path="/dashboard/blockchain" component={DashBlockchain} />
-      <Route path="/dashboard/wallet" component={DashWallet} />
-      <Route path="/dashboard/smart-contracts" component={DashSmartContracts} />
-      <Route path="/dashboard/domains" component={DashDomains} />
-      <Route path="/dashboard/ai" component={DashAI} />
-      <Route path="/dashboard/team" component={DashTeam} />
-      <Route path="/dashboard/notifications" component={DashNotifications} />
-      <Route path="/dashboard/settings" component={DashSettings} />
-      <Route path="/dashboard/security" component={DashSecurity} />
-      <Route path="/dashboard/api-keys" component={DashApiKeys} />
-      <Route path="/dashboard/knowledge-base" component={DashKnowledgeBase} />
-      <Route path="/dashboard/email-settings" component={DashEmailSettings} />
-      <Route path="/dashboard/affiliate" component={DashAffiliate} />
+      <Route path="/superadmin">{() => <SuperAdminRoute><SuperAdmin /></SuperAdminRoute>}</Route>
+      <Route path="/super-admin">{() => <Redirect to="/superadmin" />}</Route>
+      <Route path="/dashboard">{() => <UserRoute><Dashboard /></UserRoute>}</Route>
+      <Route path="/dashboard/projects">{() => <UserRoute><DashProjects /></UserRoute>}</Route>
+      <Route path="/dashboard/tickets">{() => <UserRoute><DashTickets /></UserRoute>}</Route>
+      <Route path="/dashboard/documents">{() => <UserRoute><DashDocuments /></UserRoute>}</Route>
+      <Route path="/dashboard/contracts">{() => <UserRoute><DashContracts /></UserRoute>}</Route>
+      <Route path="/dashboard/invoices">{() => <UserRoute><DashInvoices /></UserRoute>}</Route>
+      <Route path="/dashboard/blockchain">{() => <UserRoute><DashBlockchain /></UserRoute>}</Route>
+      <Route path="/dashboard/wallet">{() => <UserRoute><DashWallet /></UserRoute>}</Route>
+      <Route path="/dashboard/smart-contracts">{() => <UserRoute><DashSmartContracts /></UserRoute>}</Route>
+      <Route path="/dashboard/domains">{() => <UserRoute><DashDomains /></UserRoute>}</Route>
+      <Route path="/dashboard/ai">{() => <UserRoute><DashAI /></UserRoute>}</Route>
+      <Route path="/dashboard/team">{() => <UserRoute><DashTeam /></UserRoute>}</Route>
+      <Route path="/dashboard/notifications">{() => <UserRoute><DashNotifications /></UserRoute>}</Route>
+      <Route path="/dashboard/settings">{() => <UserRoute><DashSettings /></UserRoute>}</Route>
+      <Route path="/dashboard/security">{() => <UserRoute><DashSecurity /></UserRoute>}</Route>
+      <Route path="/dashboard/api-keys">{() => <UserRoute><DashApiKeys /></UserRoute>}</Route>
+      <Route path="/dashboard/knowledge-base">{() => <UserRoute><DashKnowledgeBase /></UserRoute>}</Route>
+      <Route path="/dashboard/email-settings">{() => <UserRoute><DashEmailSettings /></UserRoute>}</Route>
+      <Route path="/dashboard/affiliate">{() => <UserRoute><DashAffiliate /></UserRoute>}</Route>
       <Route path="/affiliazione" component={Affiliazione} />
       <Route path="/affiliazione/candidatura" component={AffiliateApply} />
       <Route path="/affiliazione/sub-affiliato" component={SubAffiliateApply} />

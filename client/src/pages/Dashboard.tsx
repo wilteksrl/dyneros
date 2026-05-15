@@ -217,25 +217,7 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4">
-            {data.nextMilestone && (
-              <div className="rounded-xl border p-4"
-                style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.2)" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="h-4 w-4" style={{ color: GOLD }} />
-                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: GOLD }}>{t("dash.next_milestone")}</p>
-                </div>
-                <p className="text-sm font-semibold">{data.nextMilestone.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">{data.nextMilestone.project}</p>
-                <div className="flex items-center gap-2 mt-3">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{data.nextMilestone.date}</span>
-                  <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: GOLD_DIM, color: GOLD }}>
-                    {data.nextMilestone.daysLeft}{t("dash.days_abbr")}
-                  </span>
-                </div>
-              </div>
-            )}
+
 
             {data.criticalTickets.length > 0 && (
               <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
