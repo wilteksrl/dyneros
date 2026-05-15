@@ -267,3 +267,14 @@
 - [x] Fix checkbox AffiliateApply (accent-amber-500)
 - [x] TypeScript 0 errori
 - [x] ZIP diff-only + CHANGES.md
+
+## CRUD Completo v4
+- [ ] Backend: createProject, createTicket, addWallet, removeWallet, createApiKey, revokeApiKey, addDomain, removeDomain
+- [ ] Backend: updateProjectStatus, replyToTicket, updateTicketStatus, setAffiliateCommission, generateApiKeyForUser, blockchainStats
+- [ ] DashProjects.tsx: form "+ Nuovo Progetto" con modal
+- [ ] DashTickets.tsx: form "+ Nuovo Ticket" + sezione risposte
+- [ ] DashWallet.tsx: form aggiungi/rimuovi wallet
+- [ ] DashApiKeys.tsx: genera/revoca API key con box copiabile
+- [ ] DashDomains.tsx: form aggiungi/rimuovi dominio
+- [ ] SuperAdmin.tsx: azioni progetti (approva/stato), ticket (risposta+stato), affiliati (commissione editabile), blockchain stats
+- [ ] TypeScript 0 errori + ZIP diff-only + CHANGES.md

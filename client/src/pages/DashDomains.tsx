@@ -1,7 +1,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, ExternalLink, Globe, Loader2, Server } from "lucide-react";
+import { CheckCircle2, ExternalLink, Globe, Loader2, Plus, Server, Trash2, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useState } from "react";
 
 const GOLD = "oklch(68% 0.19 72)";
 const BORDER = "oklch(20% 0.008 264)";
@@ -23,7 +24,16 @@ function Badge({ color, label }: { color: string; label: string }) {
 
 export default function DashDomains() {
   const { t } = useLanguage();
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.dashboard.domains.useQuery();
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ domainName: "", registrar: "", expiryDate: "", notes: "" });
+  const addDomain = trpc.dashboard.addDomain.useMutation({
+    onSuccess: () => { utils.dashboard.domains.invalidate(); setShowAdd(false); setAddForm({ domainName: "", registrar: "", expiryDate: "", notes: "" }); },
+  });
+  const removeDomain = trpc.dashboard.removeDomain.useMutation({
+    onSuccess: () => utils.dashboard.domains.invalidate(),
+  });
 
   if (isLoading) return (
     <DashboardLayout>
@@ -37,10 +47,64 @@ export default function DashDomains() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold">{t("dash.domains")}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{data.domains.length} {t("domain.managed_by_dyneros")}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold">{t("dash.domains")}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{data.domains.length} {t("domain.managed_by_dyneros")}</p>
+          </div>
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium"
+            style={{ background: GOLD, color: "#000" }}>
+            <Plus className="h-4 w-4" /> Aggiungi Dominio
+          </button>
         </div>
+        {showAdd && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+            <div className="w-full max-w-md rounded-xl p-6 space-y-4" style={{ background: "oklch(10% 0.006 264)", border: `1px solid ${BORDER}` }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold">Aggiungi Dominio</h2>
+                <button onClick={() => setShowAdd(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
+              </div>
+              {addDomain.error && (
+                <div className="rounded-lg px-3 py-2 text-sm" style={{ background: "oklch(15% 0.12 25)", color: "oklch(70% 0.22 25)" }}>
+                  {addDomain.error.message}
+                </div>
+              )}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Nome dominio *</label>
+                  <input value={addForm.domainName} onChange={e => setAddForm(f => ({ ...f, domainName: e.target.value }))}
+                    className="w-full rounded-lg px-3 h-9 text-sm font-mono bg-transparent border outline-none"
+                    style={{ borderColor: BORDER }} placeholder="es. miosito.com" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Registrar</label>
+                    <input value={addForm.registrar} onChange={e => setAddForm(f => ({ ...f, registrar: e.target.value }))}
+                      className="w-full rounded-lg px-3 h-9 text-sm bg-transparent border outline-none"
+                      style={{ borderColor: BORDER }} placeholder="Es. GoDaddy" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Scadenza</label>
+                    <input type="date" value={addForm.expiryDate} onChange={e => setAddForm(f => ({ ...f, expiryDate: e.target.value }))}
+                      className="w-full rounded-lg px-3 h-9 text-sm border outline-none"
+                      style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER }} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowAdd(false)} className="px-4 h-8 rounded-lg text-sm border" style={{ borderColor: BORDER }}>Annulla</button>
+                <button disabled={addDomain.isPending || !addForm.domainName.trim()}
+                  onClick={() => addDomain.mutate({ domainName: addForm.domainName, registrar: addForm.registrar || undefined, expiryDate: addForm.expiryDate || undefined })}
+                  className="flex items-center gap-2 px-4 h-8 rounded-lg text-sm font-medium disabled:opacity-50"
+                  style={{ background: GOLD, color: "#000" }}>
+                  {addDomain.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Salva
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-3">
           {data.domains.map(domain => (
@@ -71,10 +135,18 @@ export default function DashDomains() {
                     </div>
                   </div>
                 </div>
-                <a href={`https://${domain.domain}`} target="_blank" rel="noopener noreferrer"
-                  className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors shrink-0">
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                </a>
+                <div className="flex items-center gap-1 shrink-0">
+                  <a href={`https://${domain.domain}`} target="_blank" rel="noopener noreferrer"
+                    className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors">
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </a>
+                  {'id' in domain && (
+                    <button onClick={() => removeDomain.mutate({ domainId: (domain as { id: number }).id })}
+                      className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors">
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

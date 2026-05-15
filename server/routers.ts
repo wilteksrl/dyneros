@@ -536,6 +536,60 @@ export const appRouter = router({
       };
     }),
 
+    addWallet: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Indirizzo non valido (formato 0x...)"),
+        network: z.string().default("DYNEROS Chain"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const existing = await db.select({ id: wallets.id }).from(wallets).where(eq(wallets.address, input.address)).limit(1);
+        if (existing.length > 0) throw new Error("Indirizzo già registrato");
+        await db.insert(wallets).values({ userId: ctx.user.id, name: input.name, address: input.address, network: input.network });
+        return { success: true };
+      }),
+
+    removeWallet: protectedProcedure
+      .input(z.object({ walletId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(wallets).where(and(eq(wallets.id, input.walletId), eq(wallets.userId, ctx.user.id)));
+        return { success: true };
+      }),
+
+    addDomain: protectedProcedure
+      .input(z.object({
+        domainName: z.string().min(3),
+        registrar: z.string().optional(),
+        expiryDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(domains).values({
+          userId: ctx.user.id,
+          domainName: input.domainName,
+          registrar: input.registrar ?? null,
+          expiryDate: input.expiryDate ? new Date(input.expiryDate) : null,
+          status: "active",
+          sslStatus: "valid",
+        });
+        return { success: true };
+      }),
+
+    removeDomain: protectedProcedure
+      .input(z.object({ domainId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(domains).where(and(eq(domains.id, input.domainId), eq(domains.userId, ctx.user.id)));
+        return { success: true };
+      }),
+
     domains: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       let userDomains: typeof domains.$inferSelect[] = [];
@@ -1130,6 +1184,88 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return [];
       return db.select({ key: apiKeys, userName: users.name, userEmail: users.email }).from(apiKeys).leftJoin(users, eq(apiKeys.userId, users.id)).orderBy(desc(apiKeys.createdAt));
+    }),
+
+    updateProjectStatus: protectedProcedure
+      .input(z.object({ projectId: z.number(), status: z.enum(["planning", "in_progress", "completed", "on_hold"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(projects).set({ status: input.status }).where(eq(projects.id, input.projectId));
+        if (input.status === "in_progress") {
+          const proj = await db.select().from(projects).where(eq(projects.id, input.projectId)).limit(1);
+          if (proj[0]) {
+            await db.insert(notifications).values({ userId: proj[0].userId, type: "milestone", title: "Progetto approvato", message: `Il tuo progetto "${proj[0].name}" è stato approvato e avviato`, read: false });
+          }
+        }
+        return { success: true };
+      }),
+
+    replyToTicket: protectedProcedure
+      .input(z.object({ ticketId: z.number(), message: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(ticketReplies).values({ ticketId: input.ticketId, userId: ctx.user.id, message: input.message, isStaff: true });
+        const tk = await db.select().from(tickets).where(eq(tickets.id, input.ticketId)).limit(1);
+        if (tk[0]) {
+          await db.update(tickets).set({ status: "in_progress", updatedAt: new Date() }).where(eq(tickets.id, input.ticketId));
+          await db.insert(notifications).values({ userId: tk[0].userId, type: "ticket_update", title: "Risposta al tuo ticket", message: `Il team ha risposto al ticket ${tk[0].ticketNumber ?? String(tk[0].id)}`, read: false });
+        }
+        return { success: true };
+      }),
+
+    updateTicketStatus: protectedProcedure
+      .input(z.object({ ticketId: z.number(), status: z.enum(["open", "in_progress", "waiting_for_client", "resolved", "closed"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(tickets).set({ status: input.status, updatedAt: new Date() }).where(eq(tickets.id, input.ticketId));
+        return { success: true };
+      }),
+
+    setAffiliateCommission: protectedProcedure
+      .input(z.object({ affiliateId: z.number(), commission: z.number().min(0).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(affiliateProfiles).set({ notes: `Commissione: ${input.commission}%` }).where(eq(affiliateProfiles.id, input.affiliateId));
+        return { success: true };
+      }),
+
+    generateApiKeyForUser: protectedProcedure
+      .input(z.object({ userId: z.number(), name: z.string().min(2), scopes: z.string().default("read") }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const { key, prefix, hash } = generateApiKey();
+        await db.insert(apiKeys).values({ userId: input.userId, name: input.name, keyHash: hash, keyPrefix: prefix, scopes: input.scopes });
+        return { success: true, key };
+      }),
+
+    blockchainStats: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      let walletsCount = 0;
+      let contractsCount = 0;
+      if (db) {
+        const wc = await db.select({ c: count() }).from(wallets);
+        walletsCount = wc[0]?.c ?? 0;
+        const cc = await db.select({ c: count() }).from(smartContracts);
+        contractsCount = cc[0]?.c ?? 0;
+      }
+      let blockNumber: number | null = null;
+      try {
+        const res = await fetch("https://mainnet.dyneros.com", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_blockNumber", params: [], id: 1 }), signal: AbortSignal.timeout(4000) });
+        const json = await res.json() as { result?: string };
+        if (json.result) blockNumber = parseInt(json.result, 16);
+      } catch { blockNumber = null; }
+      return { blockNumber, walletsCount, contractsCount };
     }),
   }),
 });

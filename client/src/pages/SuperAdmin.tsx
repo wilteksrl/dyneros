@@ -251,7 +251,9 @@ function SectionUsers() {
 }
 
 function SectionAllProjects() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allProjects.useQuery();
+  const updateStatus = trpc.superadmin.updateProjectStatus.useMutation({ onSuccess: () => { toast.success("Stato aggiornato"); utils.superadmin.allProjects.invalidate(); } });
   if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
   if (!data || data.length === 0) return <EmptyState icon={FolderOpen} text="Nessun progetto presente" />;
   return (
@@ -264,16 +266,28 @@ function SectionAllProjects() {
             <th className="text-left px-4 py-2.5 font-medium">Stato</th>
             <th className="text-left px-4 py-2.5 font-medium">Priorità</th>
             <th className="text-left px-4 py-2.5 font-medium">Creato</th>
+            <th className="text-left px-4 py-2.5 font-medium">Cambia Stato</th>
           </tr>
         </thead>
         <tbody>
           {data.map(row => (
             <tr key={row.project.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium">{row.project.name}</td>
+              <td className="px-4 py-2.5 font-medium max-w-[140px] truncate">{row.project.name}</td>
               <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
               <td className="px-4 py-2.5"><Badge label={row.project.status} color={row.project.status === "in_progress" ? GOLD : row.project.status === "completed" ? "oklch(60% 0.18 145)" : "oklch(55% 0.05 264)"} /></td>
               <td className="px-4 py-2.5"><Badge label={row.project.priority} color={row.project.priority === "high" ? "oklch(55% 0.22 25)" : row.project.priority === "medium" ? GOLD : "oklch(55% 0.05 264)"} /></td>
               <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.project.createdAt).toLocaleDateString("it-IT")}</td>
+              <td className="px-4 py-2.5">
+                <select value={row.project.status}
+                  onChange={e => updateStatus.mutate({ projectId: row.project.id, status: e.target.value as "planning"|"in_progress"|"completed"|"on_hold" })}
+                  className="text-[10px] px-2 py-1 rounded border outline-none"
+                  style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "oklch(70% 0.05 264)" }}>
+                  <option value="planning">Planning</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completato</option>
+                  <option value="on_hold">On Hold</option>
+                </select>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -283,35 +297,56 @@ function SectionAllProjects() {
 }
 
 function SectionAllTickets() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allTickets.useQuery();
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const reply = trpc.superadmin.replyToTicket.useMutation({ onSuccess: () => { toast.success("Risposta inviata"); setReplyText(""); utils.superadmin.allTickets.invalidate(); } });
+  const updateTicketStatus = trpc.superadmin.updateTicketStatus.useMutation({ onSuccess: () => { toast.success("Stato aggiornato"); utils.superadmin.allTickets.invalidate(); } });
   if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
   if (!data || data.length === 0) return <EmptyState icon={Ticket} text="Nessun ticket presente" />;
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Ticket</th>
-            <th className="text-left px-4 py-2.5 font-medium">Oggetto</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-left px-4 py-2.5 font-medium">Priorità</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Creato</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.ticket.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.ticket.ticketNumber}</td>
-              <td className="px-4 py-2.5 font-medium max-w-xs truncate">{row.ticket.subject}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5"><Badge label={row.ticket.priority} color={row.ticket.priority === "critical" ? "oklch(55% 0.22 25)" : row.ticket.priority === "high" ? "oklch(60% 0.2 35)" : GOLD} /></td>
-              <td className="px-4 py-2.5"><Badge label={row.ticket.status} color={row.ticket.status === "open" ? "oklch(60% 0.18 220)" : row.ticket.status === "resolved" ? "oklch(60% 0.18 145)" : GOLD} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.ticket.createdAt).toLocaleDateString("it-IT")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      {data.map(row => (
+        <div key={row.ticket.id} className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[oklch(12%_0.006_264)] transition-colors"
+            onClick={() => setExpanded(expanded === row.ticket.id ? null : row.ticket.id)}>
+            <span className="font-mono text-[10px] text-muted-foreground shrink-0">{row.ticket.ticketNumber}</span>
+            <span className="font-medium text-sm flex-1 truncate">{row.ticket.subject}</span>
+            <span className="text-xs text-muted-foreground shrink-0">{row.userName ?? row.userEmail ?? "—"}</span>
+            <Badge label={row.ticket.priority} color={row.ticket.priority === "critical" ? "oklch(55% 0.22 25)" : row.ticket.priority === "high" ? "oklch(60% 0.2 35)" : GOLD} />
+            <Badge label={row.ticket.status} color={row.ticket.status === "open" ? "oklch(60% 0.18 220)" : row.ticket.status === "resolved" ? "oklch(60% 0.18 145)" : GOLD} />
+            <select value={row.ticket.status}
+              onClick={e => e.stopPropagation()}
+              onChange={e => updateTicketStatus.mutate({ ticketId: row.ticket.id, status: e.target.value as "open"|"in_progress"|"resolved"|"closed" })}
+              className="text-[10px] px-2 py-1 rounded border outline-none shrink-0"
+              style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "oklch(70% 0.05 264)" }}>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+          {expanded === row.ticket.id && (
+            <div className="px-4 pb-4 pt-2 border-t space-y-3" style={{ borderColor: BORDER, background: "oklch(9% 0.005 264)" }}>
+              <p className="text-xs text-muted-foreground">{new Date(row.ticket.createdAt).toLocaleString("it-IT")}</p>
+              <div className="flex gap-2">
+                <textarea value={replyText} onChange={e => setReplyText(e.target.value)}
+                  placeholder="Scrivi una risposta come admin…"
+                  rows={3}
+                  className="flex-1 rounded-lg px-3 py-2 text-sm bg-transparent border outline-none resize-none"
+                  style={{ borderColor: BORDER }} />
+                <button disabled={reply.isPending || !replyText.trim()}
+                  onClick={() => reply.mutate({ ticketId: row.ticket.id, message: replyText })}
+                  className="self-end flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium disabled:opacity-50 shrink-0"
+                  style={{ background: GOLD, color: "#000" }}>
+                  {reply.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Invia"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   Calendar,
   ChevronRight,
   Loader2,
+  Plus,
   X,
 } from "lucide-react";
 
@@ -168,9 +169,21 @@ function ProjectDetail({ id, onClose, statusLabels, priorityLabels, typeLabels, 
 
 export default function DashProjects() {
   const { t } = useLanguage();
+  const utils = trpc.useUtils();
   const { data: projects, isLoading } = trpc.dashboard.projects.useQuery();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [filter, setFilter] = useState("all");
+  const [showCreate, setShowCreate] = useState(false);
+  const [createSuccess, setCreateSuccess] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", type: "web_app", description: "", priority: "medium" as "low"|"medium"|"high", eta: "" });
+  const createMutation = trpc.dashboard.createProject.useMutation({
+    onSuccess: () => {
+      utils.dashboard.projects.invalidate();
+      setCreateSuccess(true);
+      setCreateForm({ name: "", type: "web_app", description: "", priority: "medium", eta: "" });
+      setTimeout(() => { setShowCreate(false); setCreateSuccess(false); }, 2500);
+    },
+  });
 
   const statusLabels: Record<string, string> = {
     in_progress: t("status.in_progress"), completed: t("status.completed"),
@@ -218,7 +231,88 @@ export default function DashProjects() {
                   {projects?.length ?? 0} {t("proj.in_workspace")}
                 </p>
               </div>
+              <button onClick={() => setShowCreate(true)}
+                className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium"
+                style={{ background: GOLD, color: "#000" }}>
+                <Plus className="h-4 w-4" /> Nuovo Progetto
+              </button>
             </div>
+            {showCreate && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+                <div className="w-full max-w-lg rounded-xl p-6 space-y-4" style={{ background: "oklch(10% 0.006 264)", border: `1px solid ${BORDER}` }}>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Nuovo Progetto</h2>
+                    <button onClick={() => setShowCreate(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
+                  </div>
+                  {createSuccess && (
+                    <div className="rounded-lg px-4 py-3 text-sm" style={{ background: "oklch(20% 0.12 145)", color: "oklch(80% 0.18 145)" }}>
+                      Progetto inviato — in attesa di approvazione da Dyneros
+                    </div>
+                  )}
+                  {createMutation.error && (
+                    <div className="rounded-lg px-4 py-3 text-sm" style={{ background: "oklch(15% 0.12 25)", color: "oklch(70% 0.22 25)" }}>
+                      {createMutation.error.message}
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nome progetto *</label>
+                      <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                        className="w-full rounded-lg px-3 h-9 text-sm bg-transparent border outline-none"
+                        style={{ borderColor: BORDER }} placeholder="Es. Piattaforma DeFi" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
+                        <select value={createForm.type} onChange={e => setCreateForm(f => ({ ...f, type: e.target.value }))}
+                          className="w-full rounded-lg px-3 h-9 text-sm border outline-none"
+                          style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER }}>
+                          <option value="web_app">Web Application</option>
+                          <option value="blockchain_infrastructure">Blockchain</option>
+                          <option value="smart_contract">Smart Contract</option>
+                          <option value="ai_system">AI/ML</option>
+                          <option value="other">Altro</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Priorità</label>
+                        <select value={createForm.priority} onChange={e => setCreateForm(f => ({ ...f, priority: e.target.value as "low"|"medium"|"high" }))}
+                          className="w-full rounded-lg px-3 h-9 text-sm border outline-none"
+                          style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER }}>
+                          <option value="low">Bassa</option>
+                          <option value="medium">Media</option>
+                          <option value="high">Alta</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Descrizione</label>
+                      <textarea value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
+                        rows={3} className="w-full rounded-lg px-3 py-2 text-sm bg-transparent border outline-none resize-none"
+                        style={{ borderColor: BORDER }} placeholder="Descrivi il progetto..." />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Data stimata consegna</label>
+                      <input type="date" value={createForm.eta} onChange={e => setCreateForm(f => ({ ...f, eta: e.target.value }))}
+                        className="w-full rounded-lg px-3 h-9 text-sm border outline-none"
+                        style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER }} />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button onClick={() => setShowCreate(false)}
+                      className="px-4 h-9 rounded-lg text-sm border" style={{ borderColor: BORDER }}>Annulla</button>
+                    <button
+                      disabled={createMutation.isPending || !createForm.name.trim()}
+                      onClick={() => createMutation.mutate({ name: createForm.name, type: createForm.type as "blockchain_infrastructure"|"smart_contract"|"web_app"|"ai_system"|"other", description: createForm.description || undefined, priority: createForm.priority, eta: createForm.eta || undefined, environment: "production" })}
+                      className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium disabled:opacity-50"
+                      style={{ background: GOLD, color: "#000" }}>
+                      {createMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      Invia Richiesta
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 mb-5 flex-wrap">
               {filters.map(f => (

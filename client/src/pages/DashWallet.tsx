@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { ArrowUpRight, Copy, ExternalLink, Loader2, Wallet } from "lucide-react";
+import { ArrowUpRight, Copy, ExternalLink, Loader2, Plus, Trash2, Wallet, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -22,7 +22,16 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
 export default function DashWallet() {
   const { t } = useLanguage();
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.dashboard.walletInfo.useQuery();
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState({ name: "", address: "", network: "DYNEROS Chain" });
+  const addWallet = trpc.dashboard.addWallet.useMutation({
+    onSuccess: () => { utils.dashboard.walletInfo.invalidate(); setShowAdd(false); setAddForm({ name: "", address: "", network: "DYNEROS Chain" }); },
+  });
+  const removeWallet = trpc.dashboard.removeWallet.useMutation({
+    onSuccess: () => utils.dashboard.walletInfo.invalidate(),
+  });
 
   if (isLoading) return (
     <DashboardLayout>
@@ -42,10 +51,56 @@ export default function DashWallet() {
         </div>
 
         <div className="rounded-xl border p-5" style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.2)" }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Wallet className="h-4 w-4" style={{ color: GOLD }} />
-            <h2 className="text-sm font-semibold">{t("wallet.linked_addresses")}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" style={{ color: GOLD }} />
+              <h2 className="text-sm font-semibold">{t("wallet.linked_addresses")}</h2>
+            </div>
+            <button onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs font-medium"
+              style={{ background: GOLD, color: "#000" }}>
+              <Plus className="h-3 w-3" /> Aggiungi
+            </button>
           </div>
+          {showAdd && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+              <div className="w-full max-w-md rounded-xl p-6 space-y-4" style={{ background: "oklch(10% 0.006 264)", border: `1px solid ${BORDER}` }}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold">Aggiungi Wallet</h2>
+                  <button onClick={() => setShowAdd(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
+                </div>
+                {addWallet.error && (
+                  <div className="rounded-lg px-3 py-2 text-sm" style={{ background: "oklch(15% 0.12 25)", color: "oklch(70% 0.22 25)" }}>
+                    {addWallet.error.message}
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Nome / Label *</label>
+                    <input value={addForm.name} onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
+                      className="w-full rounded-lg px-3 h-9 text-sm bg-transparent border outline-none"
+                      style={{ borderColor: BORDER }} placeholder="Es. MetaMask principale" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Indirizzo (0x...) *</label>
+                    <input value={addForm.address} onChange={e => setAddForm(f => ({ ...f, address: e.target.value }))}
+                      className="w-full rounded-lg px-3 h-9 text-sm font-mono bg-transparent border outline-none"
+                      style={{ borderColor: BORDER }} placeholder="0x..." />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setShowAdd(false)} className="px-4 h-8 rounded-lg text-sm border" style={{ borderColor: BORDER }}>Annulla</button>
+                  <button disabled={addWallet.isPending || !addForm.name.trim() || !addForm.address.trim()}
+                    onClick={() => addWallet.mutate(addForm)}
+                    className="flex items-center gap-2 px-4 h-8 rounded-lg text-sm font-medium disabled:opacity-50"
+                    style={{ background: GOLD, color: "#000" }}>
+                    {addWallet.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Salva
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="space-y-3">
             {data.addresses.map(addr => (
               <div key={addr.address} className="flex items-center gap-3 p-3 rounded-lg"
@@ -69,6 +124,12 @@ export default function DashWallet() {
                     className="h-6 w-6 flex items-center justify-center rounded hover:bg-[oklch(18%_0.008_264)] transition-colors">
                     <ExternalLink className="h-3 w-3 text-muted-foreground" />
                   </a>
+                  {'id' in addr && (
+                    <button onClick={() => removeWallet.mutate({ walletId: (addr as { id: number }).id })}
+                      className="h-6 w-6 flex items-center justify-center rounded hover:bg-[oklch(18%_0.008_264)] transition-colors">
+                      <Trash2 className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
