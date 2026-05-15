@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name, email, role, status FROM users WHERE email = 'admin@dyneros.com' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2eJzSppx1LxE5ev.1ffb092631ca --database 4snNTiMWF28nDrjyUzMUQY --execute SELECT id, name, email, role, status FROM users WHERE email = 'admin@dyneros.com' LIMIT 1;",
+  "rows": [
+    {
+      "id": "270007",
+      "name": "Super Admin",
+      "email": "admin@dyneros.com",
+      "role": "superadmin",
+      "status": "active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tstatus\n270007\tSuper Admin\tadmin@dyneros.com\tsuperadmin\tactive\n",
+  "stderr": "",
+  "execution_time_ms": 836
+}

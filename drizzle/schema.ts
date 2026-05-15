@@ -430,3 +430,20 @@ export const affiliateAgreements = mysqlTable("affiliate_agreements", {
   affIdx: index("agree_aff_idx").on(t.affiliateProfileId),
 }));
 export type AffiliateAgreement = typeof affiliateAgreements.$inferSelect;
+
+export const emailLog = mysqlTable("email_log", {
+  id: int("id").autoincrement().primaryKey(),
+  sentBy: int("sentBy"),
+  toEmail: varchar("toEmail", { length: 320 }).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("status", ["sent", "failed"]).default("sent").notNull(),
+  errorMessage: text("errorMessage"),
+  isBulk: boolean("isBulk").default(false).notNull(),
+  recipientCount: int("recipientCount").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  sentByIdx: index("email_log_sentby_idx").on(t.sentBy),
+  createdIdx: index("email_log_created_idx").on(t.createdAt),
+}));
+export type EmailLog = typeof emailLog.$inferSelect;

@@ -45,7 +45,8 @@ export default function DashTeam() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {data?.team.map(member => {
             const sc = STATUS_COLORS[member.status] || "oklch(55% 0.05 264)";
-            const initials = member.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+            const displayName = member.name || member.email || "?";
+            const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
             return (
               <div key={member.email} className="p-4 rounded-xl border transition-all hover:border-[oklch(68%_0.19_72/0.3)]"
                 style={{ background: CARD_BG, borderColor: BORDER }}>

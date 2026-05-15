@@ -8,7 +8,8 @@ import {
   users, projects, tickets, ticketReplies, invoices, contracts,
   documents, wallets, smartContracts, domains, aiProjects,
   notifications, userSettings, apiKeys, auditLog,
-  affiliateProfiles, affiliateConversions
+  affiliateProfiles, affiliateConversions, affiliatePayouts,
+  affiliateLeads, emailLog
 } from "../drizzle/schema";
 import { COOKIE_NAME } from "@shared/const";
 import {
@@ -510,16 +511,30 @@ export const appRouter = router({
       };
     }),
 
-    teamContacts: protectedProcedure.query(() => ({
-      team: [
+    teamContacts: protectedProcedure.query(async () => {
+      const db = await getDb();
+      const fallback = [
         { name: "Alessia Romano", role: "Account Manager", email: "a.romano@dyneros.com", status: "available", projects: [] },
         { name: "Marco Ferretti", role: "Technical Lead", email: "m.ferretti@dyneros.com", status: "available", projects: [] },
         { name: "Luca Bianchi", role: "Blockchain Specialist", email: "l.bianchi@dyneros.com", status: "busy", projects: [] },
         { name: "Sara Conti", role: "DevOps Engineer", email: "s.conti@dyneros.com", status: "available", projects: [] },
         { name: "Giulia Esposito", role: "AI Specialist", email: "g.esposito@dyneros.com", status: "available", projects: [] },
         { name: "Riccardo Mancini", role: "Billing Contact", email: "billing@dyneros.com", status: "available", projects: [] },
-      ],
-    })),
+      ];
+      if (!db) return { team: fallback };
+      const admins = await db.select({ id: users.id, name: users.name, email: users.email, role: users.role }).from(users).where(sql`${users.role} IN ('admin', 'superadmin')`).limit(20);
+      if (admins.length === 0) return { team: fallback };
+      const roleLabel: Record<string, string> = { superadmin: "Responsabile Piattaforma", admin: "Amministratore" };
+      return {
+        team: admins.map(a => ({
+          name: a.name ?? a.email,
+          role: roleLabel[a.role] ?? "Staff",
+          email: a.email,
+          status: "available",
+          projects: [],
+        })),
+      };
+    }),
 
     domains: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
@@ -868,6 +883,152 @@ export const appRouter = router({
         await db.delete(users).where(eq(users.id, input.userId));
         return { success: true };
       }),
+
+    listUsersPaged: protectedProcedure
+      .input(z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(25),
+        search: z.string().optional(),
+        role: z.enum(["user", "admin", "superadmin", "all"]).default("all"),
+        status: z.enum(["active", "suspended", "pending", "all"]).default("all"),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) return { rows: [], total: 0, pages: 0 };
+        const offset = (input.page - 1) * input.limit;
+        const conditions: ReturnType<typeof eq>[] = [];
+        if (input.role !== "all") conditions.push(eq(users.role, input.role as "user" | "admin" | "superadmin"));
+        if (input.status !== "all") conditions.push(eq(users.status, input.status as "active" | "suspended" | "pending"));
+        if (input.search) {
+          const s = `%${input.search}%`;
+          conditions.push(sql`(${users.name} LIKE ${s} OR ${users.email} LIKE ${s} OR ${users.company} LIKE ${s})` as ReturnType<typeof eq>);
+        }
+        const where = conditions.length > 0 ? and(...conditions) : undefined;
+        const [rows, totalRows] = await Promise.all([
+          db.select({ id: users.id, name: users.name, email: users.email, role: users.role, status: users.status, company: users.company, emailVerified: users.emailVerified, createdAt: users.createdAt, lastSignedIn: users.lastSignedIn }).from(users).where(where).orderBy(desc(users.createdAt)).limit(input.limit).offset(offset),
+          db.select({ c: count() }).from(users).where(where),
+        ]);
+        const total = totalRows[0]?.c ?? 0;
+        return { rows, total, pages: Math.ceil(total / input.limit) };
+      }),
+
+    sendEmail: protectedProcedure
+      .input(z.object({ to: z.string().email(), subject: z.string().min(1), body: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        const result = await sendEmail({ to: input.to, subject: input.subject, html: `<div style="font-family:sans-serif">${input.body.replace(/\n/g, "<br>")}</div>` });
+        if (db) await db.insert(emailLog).values({ sentBy: ctx.user.id, toEmail: input.to, subject: input.subject, body: input.body, status: result.ok ? "sent" : "failed", errorMessage: result.error ?? null, isBulk: false, recipientCount: 1 }).catch(() => {});
+        return result;
+      }),
+
+    sendBulkEmail: protectedProcedure
+      .input(z.object({ filter: z.enum(["all", "user", "admin", "active", "pending"]), subject: z.string().min(1), body: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const allUsers = await db.select({ email: users.email, role: users.role, status: users.status }).from(users);
+        const recipients = allUsers.filter(u => {
+          if (input.filter === "all") return true;
+          if (input.filter === "user" || input.filter === "admin") return u.role === input.filter;
+          if (input.filter === "active") return u.status === "active";
+          if (input.filter === "pending") return u.status === "pending";
+          return false;
+        });
+        let sent = 0; let failed = 0;
+        for (const r of recipients) {
+          if (!r.email) continue;
+          const res = await sendEmail({ to: r.email, subject: input.subject, html: `<div style="font-family:sans-serif">${input.body.replace(/\n/g, "<br>")}</div>` });
+          if (res.ok) sent++; else failed++;
+        }
+        await db.insert(emailLog).values({ sentBy: ctx.user.id, toEmail: `bulk:${input.filter}`, subject: input.subject, body: input.body, status: failed === 0 ? "sent" : "failed", isBulk: true, recipientCount: recipients.length }).catch(() => {});
+        return { sent, failed, total: recipients.length };
+      }),
+
+    emailHistory: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(emailLog).orderBy(desc(emailLog.createdAt)).limit(50);
+    }),
+
+    auditLogList: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(50);
+    }),
+
+    dbStats: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      const results = await Promise.all([
+        db.select({ c: count() }).from(users).then(r => ({ table: "users", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(projects).then(r => ({ table: "projects", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(tickets).then(r => ({ table: "tickets", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(invoices).then(r => ({ table: "invoices", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(contracts).then(r => ({ table: "contracts", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(documents).then(r => ({ table: "documents", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(wallets).then(r => ({ table: "wallets", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(smartContracts).then(r => ({ table: "smart_contracts", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(notifications).then(r => ({ table: "notifications", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(apiKeys).then(r => ({ table: "api_keys", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(affiliateProfiles).then(r => ({ table: "affiliate_profiles", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(affiliateConversions).then(r => ({ table: "affiliate_conversions", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(emailLog).then(r => ({ table: "email_log", count: r[0]?.c ?? 0 })),
+        db.select({ c: count() }).from(auditLog).then(r => ({ table: "audit_log", count: r[0]?.c ?? 0 })),
+      ]);
+      return results;
+    }),
+
+    envStatus: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      return [
+        { key: "DATABASE_URL", configured: !!process.env.DATABASE_URL },
+        { key: "SMTP_HOST", configured: !!process.env.SMTP_HOST },
+        { key: "SMTP_USER", configured: !!process.env.SMTP_USER },
+        { key: "SMTP_PASS", configured: !!process.env.SMTP_PASS },
+        { key: "SMTP_PORT", configured: !!process.env.SMTP_PORT },
+        { key: "SMTP_FROM_EMAIL", configured: !!process.env.SMTP_FROM_EMAIL },
+        { key: "JWT_SECRET", configured: !!process.env.JWT_SECRET },
+        { key: "VITE_APP_ID", configured: !!process.env.VITE_APP_ID },
+        { key: "BUILT_IN_FORGE_API_KEY", configured: !!process.env.BUILT_IN_FORGE_API_KEY },
+        { key: "VITE_ANALYTICS_ENDPOINT", configured: !!process.env.VITE_ANALYTICS_ENDPOINT },
+      ];
+    }),
+
+    affiliateList: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return { profiles: [], stats: { totalConversions: 0, pendingPayouts: "0" } };
+      const [profiles, convRows, payoutRows] = await Promise.all([
+        db.select().from(affiliateProfiles).orderBy(desc(affiliateProfiles.createdAt)),
+        db.select({ c: count() }).from(affiliateConversions),
+        db.select({ s: sum(affiliatePayouts.amount) }).from(affiliatePayouts).where(eq(affiliatePayouts.status, "pending")),
+      ]);
+      return { profiles, stats: { totalConversions: convRows[0]?.c ?? 0, pendingPayouts: payoutRows[0]?.s ?? "0" } };
+    }),
+
+    affiliateAction: protectedProcedure
+      .input(z.object({ affiliateId: z.number(), action: z.enum(["approve", "suspend", "reject"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const newStatus = input.action === "approve" ? "active" : input.action === "suspend" ? "suspended" : "rejected";
+        await db.update(affiliateProfiles).set({ status: newStatus as "active" | "suspended" | "rejected", approvedAt: input.action === "approve" ? new Date() : null }).where(eq(affiliateProfiles.id, input.affiliateId));
+        return { success: true };
+      }),
+
+    recentConversions: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(affiliateConversions).orderBy(desc(affiliateConversions.createdAt)).limit(20);
+    }),
 
     stats: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");

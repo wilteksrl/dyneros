@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
+import { trpc } from "@/lib/trpc";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -48,6 +49,22 @@ import EmbedBannerSquare from "./pages/EmbedBannerSquare";
 import EmbedBannerSocial from "./pages/EmbedBannerSocial";
 import EmbedBannerVertical from "./pages/EmbedBannerVertical";
 
+function SuperAdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { data: user, isLoading } = trpc.auth.me.useQuery();
+  if (isLoading) return null;
+  if (!user) return <Redirect to="/login" />;
+  if (user.role !== "superadmin") return <Redirect to="/dashboard" />;
+  return <Component />;
+}
+
+function UserRoute({ component: Component }: { component: React.ComponentType }) {
+  const { data: user, isLoading } = trpc.auth.me.useQuery();
+  if (isLoading) return null;
+  if (!user) return <Redirect to="/login" />;
+  if (user.role === "superadmin") return <Redirect to="/superadmin" />;
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -56,7 +73,8 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/superadmin" component={SuperAdmin} />
+      <Route path="/superadmin">{() => <SuperAdminRoute component={SuperAdmin} />}</Route>
+      <Route path="/super-admin">{() => <SuperAdminRoute component={SuperAdmin} />}</Route>
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/projects" component={DashProjects} />

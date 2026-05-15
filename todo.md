@@ -249,3 +249,21 @@
 - [x] LanguageContext: chiavi IT+EN per modulo affiliazione (dash.nav.affiliate)
 - [x] TypeScript 0 errori
 - [x] ZIP diff-only con solo file nuovi/modificati
+
+## Overhaul Completo v2 (ZERO MOCK DATA)
+- [ ] Backend: adminGetAllUsers paginato (page, limit, search, roleFilter, statusFilter)
+- [ ] Backend: adminSendEmail + adminSendBulkEmail con storico su DB
+- [ ] Backend: adminGetAuditLog(50) + adminGetDbStats (conteggi tabelle)
+- [ ] Backend: adminGetEnvStatus (nomi variabili configurate, no valori)
+- [ ] Backend: adminGetAffiliateList + adminApproveAffiliate + adminSuspendAffiliate
+- [ ] SuperAdmin.tsx: Tab 1 Overview — 7 KPI reali + tabella ultimi 10 utenti
+- [ ] SuperAdmin.tsx: Tab 2 Utenti paginata 25/pagina con filtri e azioni complete
+- [ ] SuperAdmin.tsx: Tab 3 Email — form singola + bulk + storico invii
+- [ ] SuperAdmin.tsx: Tab 4 Sistema — env status + audit log + DB stats
+- [ ] SuperAdmin.tsx: Tab 5 Affiliati — tabella + azioni approva/sospendi + conversioni
+- [ ] Route guard SuperAdminRoute + UserRoute in App.tsx
+- [ ] Redirect /super-admin (nuovo path unificato)
+- [ ] Dashboard team: legge admin reali dal DB (no nomi hardcodati)
+- [ ] Fix checkbox AffiliateApply (accent-amber-500)
+- [ ] TypeScript 0 errori
+- [ ] ZIP diff-only + CHANGES.md

@@ -1,106 +1,526 @@
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
-  AlertTriangle, CheckCircle, Crown, Globe, Loader2, LogOut, Mail, Search,
-  Server, Shield, Trash2, UserCheck, UserX, Users, Send, CheckCircle2,
-  Award, DollarSign, Check, X, Wallet, FileDown
+  Users, Mail, Server, Award, BarChart3, Loader2,
+  LogOut, Search, ChevronLeft, ChevronRight, Check, X,
+  Trash2, ShieldCheck, ShieldOff, RefreshCw, Send, Globe
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { toast } from "sonner";
 
-const GOLD = "oklch(68% 0.19 72)";
-const BG = "oklch(8% 0.006 264)";
+const BG = "#050505";
+const CARD = "#0d0d14";
 const BORDER = "oklch(20% 0.008 264)";
+const GOLD = "oklch(68% 0.19 72)";
+const GOLD_DIM = "oklch(68% 0.19 72 / 0.15)";
+const TEXT = "#f9fafb";
+const MUTED = "oklch(55% 0.01 264)";
 
-const ROLE_COLORS: Record<string, string> = {
-  user: "oklch(60% 0.08 264)",
-  admin: "oklch(68% 0.19 72)",
-  superadmin: "oklch(75% 0.22 30)",
-};
+type Tab = "overview" | "users" | "email" | "system" | "affiliates";
 
-type Tab = "users" | "email" | "system" | "affiliates";
+function KpiCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "18px 20px" }}>
+      <div style={{ color: MUTED, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 6 }}>{label}</div>
+      <div style={{ color: GOLD, fontSize: 26, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
+    </div>
+  );
+}
+
+function Badge({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string }> = {
+    active: { bg: "oklch(30% 0.08 145)", color: "oklch(70% 0.18 145)" },
+    pending: { bg: "oklch(30% 0.08 72)", color: GOLD },
+    suspended: { bg: "oklch(25% 0.06 25)", color: "oklch(65% 0.18 25)" },
+    rejected: { bg: "oklch(25% 0.06 25)", color: "oklch(65% 0.18 25)" },
+    superadmin: { bg: GOLD_DIM, color: GOLD },
+    admin: { bg: "oklch(25% 0.06 264)", color: "oklch(65% 0.12 264)" },
+    user: { bg: "oklch(18% 0.005 264)", color: MUTED },
+    sent: { bg: "oklch(30% 0.08 145)", color: "oklch(70% 0.18 145)" },
+    failed: { bg: "oklch(25% 0.06 25)", color: "oklch(65% 0.18 25)" },
+    bulk: { bg: "oklch(25% 0.06 264)", color: "oklch(65% 0.12 264)" },
+    single: { bg: "oklch(18% 0.005 264)", color: MUTED },
+    affiliate: { bg: GOLD_DIM, color: GOLD },
+    sub_affiliate: { bg: "oklch(25% 0.06 264)", color: "oklch(65% 0.12 264)" },
+  };
+  const s = map[status] ?? { bg: "oklch(18% 0.005 264)", color: MUTED };
+  return (
+    <span style={{ background: s.bg, color: s.color, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+      {status}
+    </span>
+  );
+}
+
+function TabOverview() {
+  const { data: stats, isLoading } = trpc.superadmin.stats.useQuery();
+  if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} /></div>;
+  if (!stats) return null;
+  const kpis = [
+    { label: "Utenti Totali", value: stats.total },
+    { label: "Utenti Attivi", value: stats.active },
+    { label: "Nuovi (questo mese)", value: stats.newThisMonth },
+    { label: "Attivi (30gg)", value: stats.activeUsers30d },
+    { label: "Fatturato Pagato", value: `€${Number(stats.totalRevenue ?? 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })}` },
+    { label: "Affiliati Attivi", value: stats.activeAffiliates },
+    { label: "Ticket Aperti", value: stats.openTickets },
+    { label: "Progetti Attivi", value: stats.activeProjects },
+  ];
+  return (
+    <div className="space-y-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
+        {kpis.map(k => <KpiCard key={k.label} label={k.label} value={k.value} />)}
+      </div>
+      <div>
+        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 12 }}>Ultimi 10 utenti registrati</div>
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
+                {["Nome", "Email", "Ruolo", "Stato", "Registrato"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(stats.recentUsers ?? []).map((u, i) => (
+                <tr key={u.id} style={{ borderBottom: i < (stats.recentUsers?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <td style={{ padding: "10px 14px", color: TEXT }}>{u.name ?? "—"}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED }}>{u.email}</td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={u.role} /></td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={u.status} /></td>
+                  <td style={{ padding: "10px 14px", color: MUTED }}>{new Date(u.createdAt).toLocaleDateString("it-IT")}</td>
+                </tr>
+              ))}
+              {(stats.recentUsers ?? []).length === 0 && (
+                <tr><td colSpan={5} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessun utente</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabUsers() {
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "admin" | "superadmin">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended" | "pending">("all");
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+
+  const { data, isLoading, refetch } = trpc.superadmin.listUsersPaged.useQuery({ page, limit: 25, search: search || undefined, role: roleFilter, status: statusFilter });
+  const updateRole = trpc.superadmin.updateUserRole.useMutation({ onSuccess: () => { refetch(); toast.success("Ruolo aggiornato"); }, onError: e => toast.error(e.message) });
+  const updateStatus = trpc.superadmin.updateUserStatus.useMutation({ onSuccess: () => { refetch(); toast.success("Stato aggiornato"); }, onError: e => toast.error(e.message) });
+  const deleteUser = trpc.superadmin.deleteUser.useMutation({ onSuccess: () => { refetch(); setConfirmDelete(null); toast.success("Utente eliminato"); }, onError: e => toast.error(e.message) });
+
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 1;
+
+  const selStyle = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 12px", color: TEXT, fontSize: 13 };
+
+  return (
+    <div className="space-y-4">
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "center" }}>
+        <div style={{ position: "relative" as const, flex: "1 1 220px" }}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: MUTED }} />
+          <input value={searchInput} onChange={e => setSearchInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setSearch(searchInput); setPage(1); } }} placeholder="Cerca nome, email, azienda… (Invio)" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 12px 8px 32px", color: TEXT, fontSize: 13, width: "100%" }} />
+        </div>
+        <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value as typeof roleFilter); setPage(1); }} style={selStyle}>
+          <option value="all">Tutti i ruoli</option>
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+          <option value="superadmin">Superadmin</option>
+        </select>
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as typeof statusFilter); setPage(1); }} style={selStyle}>
+          <option value="all">Tutti gli stati</option>
+          <option value="active">Attivi</option>
+          <option value="pending">In attesa</option>
+          <option value="suspended">Sospesi</option>
+        </select>
+        <button onClick={() => { setSearch(searchInput); setPage(1); refetch(); }} style={{ background: GOLD_DIM, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "8px 14px", color: GOLD, fontSize: 13, cursor: "pointer" }}>
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 12 }}>
+        {[{ label: "Totale DB", value: total }, { label: "In pagina", value: rows.length }].map(c => (
+          <div key={c.label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 16px", fontSize: 12 }}>
+            <span style={{ color: MUTED }}>{c.label}: </span><span style={{ color: GOLD, fontWeight: 700 }}>{c.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} /></div>
+      ) : (
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 900 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
+                {["Nome", "Email", "Azienda", "Ruolo", "Stato", "Verificato", "Registrato", "Ultimo accesso", "Azioni"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((u, i) => (
+                <tr key={u.id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <td style={{ padding: "10px 14px", color: TEXT, whiteSpace: "nowrap" as const }}>{u.name ?? "—"}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{u.email}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{u.company ?? "—"}</td>
+                  <td style={{ padding: "10px 14px" }}>
+                    <select value={u.role} onChange={e => updateRole.mutate({ userId: u.id, role: e.target.value as "user" | "admin" | "superadmin" })} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "3px 8px", color: TEXT, fontSize: 12 }}>
+                      <option value="user">user</option>
+                      <option value="admin">admin</option>
+                      <option value="superadmin">superadmin</option>
+                    </select>
+                  </td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={u.status} /></td>
+                  <td style={{ padding: "10px 14px" }}>
+                    {u.emailVerified ? <Check className="h-4 w-4" style={{ color: "oklch(70% 0.18 145)" }} /> : <X className="h-4 w-4" style={{ color: "oklch(65% 0.18 25)" }} />}
+                  </td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(u.createdAt).toLocaleDateString("it-IT")}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{u.lastSignedIn ? new Date(u.lastSignedIn).toLocaleDateString("it-IT") : "—"}</td>
+                  <td style={{ padding: "10px 14px" }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button title={u.status === "active" ? "Sospendi" : "Attiva"} onClick={() => updateStatus.mutate({ userId: u.id, status: u.status === "active" ? "suspended" : "active" })} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: MUTED }}>
+                        {u.status === "active" ? <ShieldOff className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                      </button>
+                      {confirmDelete === u.id ? (
+                        <>
+                          <button onClick={() => deleteUser.mutate({ userId: u.id })} style={{ background: "oklch(25% 0.06 25)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(65% 0.18 25)", fontSize: 11 }}>Conferma</button>
+                          <button onClick={() => setConfirmDelete(null)} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: MUTED, fontSize: 11 }}>Annulla</button>
+                        </>
+                      ) : (
+                        <button onClick={() => setConfirmDelete(u.id)} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: "oklch(65% 0.18 25)" }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={9} style={{ padding: "32px", textAlign: "center" as const, color: MUTED }}>Nessun utente trovato</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {pages > 1 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "6px 10px", cursor: page === 1 ? "not-allowed" : "pointer", color: page === 1 ? MUTED : TEXT }}>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          {Array.from({ length: Math.min(7, pages) }, (_, i) => {
+            const p = pages <= 7 ? i + 1 : page <= 4 ? i + 1 : page >= pages - 3 ? pages - 6 + i : page - 3 + i;
+            return <button key={p} onClick={() => setPage(p)} style={{ background: p === page ? GOLD_DIM : CARD, border: `1px solid ${p === page ? GOLD : BORDER}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer", color: p === page ? GOLD : TEXT, fontSize: 13, fontWeight: p === page ? 700 : 400 }}>{p}</button>;
+          })}
+          <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "6px 10px", cursor: page === pages ? "not-allowed" : "pointer", color: page === pages ? MUTED : TEXT }}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <span style={{ color: MUTED, fontSize: 12 }}>Pagina {page} di {pages} ({total} totali)</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabEmail() {
+  const [to, setTo] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [bulkFilter, setBulkFilter] = useState<"all" | "user" | "admin" | "active" | "pending">("all");
+  const [bulkSubject, setBulkSubject] = useState("");
+  const [bulkBody, setBulkBody] = useState("");
+  const [activeForm, setActiveForm] = useState<"single" | "bulk">("single");
+
+  const { data: history, refetch: refetchHistory } = trpc.superadmin.emailHistory.useQuery();
+  const sendSingle = trpc.superadmin.sendEmail.useMutation({
+    onSuccess: (r) => { toast.success(r.ok ? "Email inviata" : `Errore: ${r.error}`); refetchHistory(); setTo(""); setSubject(""); setBody(""); },
+    onError: e => toast.error(e.message),
+  });
+  const sendBulk = trpc.superadmin.sendBulkEmail.useMutation({
+    onSuccess: (r) => { toast.success(`Inviate: ${r.sent} / Fallite: ${r.failed}`); refetchHistory(); setBulkSubject(""); setBulkBody(""); },
+    onError: e => toast.error(e.message),
+  });
+
+  const inputStyle = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "9px 12px", color: TEXT, fontSize: 13, width: "100%" };
+
+  return (
+    <div className="space-y-6">
+      <div style={{ display: "flex", gap: 8 }}>
+        {(["single", "bulk"] as const).map(f => (
+          <button key={f} onClick={() => setActiveForm(f)} style={{ background: activeForm === f ? GOLD_DIM : CARD, border: `1px solid ${activeForm === f ? GOLD : BORDER}`, borderRadius: 8, padding: "8px 18px", color: activeForm === f ? GOLD : MUTED, fontSize: 13, cursor: "pointer", fontWeight: activeForm === f ? 700 : 400 }}>
+            {f === "single" ? "Email Singola" : "Email di Massa"}
+          </button>
+        ))}
+      </div>
+
+      {activeForm === "single" ? (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }} className="space-y-3">
+          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Invia Email Singola</div>
+          <input value={to} onChange={e => setTo(e.target.value)} placeholder="Destinatario (email)" style={inputStyle} />
+          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Oggetto" style={inputStyle} />
+          <textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Corpo del messaggio" rows={6} style={{ ...inputStyle, resize: "vertical" as const }} />
+          <button onClick={() => sendSingle.mutate({ to, subject, body })} disabled={sendSingle.isPending || !to || !subject || !body} style={{ background: GOLD_DIM, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "9px 20px", color: GOLD, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            {sendSingle.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Invia
+          </button>
+        </div>
+      ) : (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20 }} className="space-y-3">
+          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Invia Email di Massa</div>
+          <select value={bulkFilter} onChange={e => setBulkFilter(e.target.value as typeof bulkFilter)} style={inputStyle}>
+            <option value="all">Tutti gli utenti</option>
+            <option value="user">Solo utenti (ruolo user)</option>
+            <option value="admin">Solo admin</option>
+            <option value="active">Solo utenti attivi</option>
+            <option value="pending">Solo utenti in attesa</option>
+          </select>
+          <input value={bulkSubject} onChange={e => setBulkSubject(e.target.value)} placeholder="Oggetto" style={inputStyle} />
+          <textarea value={bulkBody} onChange={e => setBulkBody(e.target.value)} placeholder="Corpo del messaggio" rows={6} style={{ ...inputStyle, resize: "vertical" as const }} />
+          <button onClick={() => sendBulk.mutate({ filter: bulkFilter, subject: bulkSubject, body: bulkBody })} disabled={sendBulk.isPending || !bulkSubject || !bulkBody} style={{ background: GOLD_DIM, border: `1px solid ${GOLD}`, borderRadius: 8, padding: "9px 20px", color: GOLD, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            {sendBulk.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Invia a tutti
+          </button>
+        </div>
+      )}
+
+      <div>
+        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10 }}>Storico invii (ultimi 50)</div>
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 700 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
+                {["Data", "Destinatario", "Oggetto", "Tipo", "Stato"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(history ?? []).map((h, i) => (
+                <tr key={h.id} style={{ borderBottom: i < (history?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(h.createdAt).toLocaleString("it-IT")}</td>
+                  <td style={{ padding: "10px 14px", color: TEXT, fontSize: 12 }}>{h.toEmail}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{h.subject}</td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={h.isBulk ? "bulk" : "single"} /></td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={h.status} /></td>
+                </tr>
+              ))}
+              {(history ?? []).length === 0 && (
+                <tr><td colSpan={5} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessun invio registrato</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabSystem() {
+  const { data: envStatus } = trpc.superadmin.envStatus.useQuery();
+  const { data: auditLogs } = trpc.superadmin.auditLogList.useQuery();
+  const { data: dbStats } = trpc.superadmin.dbStats.useQuery();
+  const { data: smtpConf } = trpc.email.smtpConfig.useQuery();
+
+  return (
+    <div className="space-y-6">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18 }}>
+          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Variabili d'ambiente</div>
+          <div className="space-y-2">
+            {(envStatus ?? []).map(e => (
+              <div key={e.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: MUTED, fontFamily: "monospace" }}>{e.key}</span>
+                {e.configured
+                  ? <span style={{ color: "oklch(70% 0.18 145)", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}><Check className="h-3.5 w-3.5" /> Configurato</span>
+                  : <span style={{ color: "oklch(65% 0.18 25)", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}><X className="h-3.5 w-3.5" /> Mancante</span>}
+              </div>
+            ))}
+          </div>
+          {smtpConf && (
+            <div style={{ marginTop: 14, padding: "10px 12px", background: smtpConf.configured ? "oklch(20% 0.05 145)" : "oklch(20% 0.05 25)", borderRadius: 8, fontSize: 12 }}>
+              <span style={{ color: smtpConf.configured ? "oklch(70% 0.18 145)" : "oklch(65% 0.18 25)", fontWeight: 600 }}>
+                SMTP: {smtpConf.configured ? `✅ Configurato (host: ${smtpConf.host})` : "❌ Non configurato"}
+              </span>
+            </div>
+          )}
+        </div>
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 18 }}>
+          <div style={{ color: TEXT, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Statistiche Database</div>
+          <div className="space-y-1.5">
+            {(dbStats ?? []).map(d => (
+              <div key={d.table} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: MUTED, fontFamily: "monospace", fontSize: 12 }}>{d.table}</span>
+                <span style={{ color: GOLD, fontWeight: 700 }}>{d.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10 }}>Audit Log (ultimi 50 eventi)</div>
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 600 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
+                {["Data", "Utente ID", "Azione", "Risorsa", "IP"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(auditLogs ?? []).map((a, i) => (
+                <tr key={a.id} style={{ borderBottom: i < (auditLogs?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(a.createdAt).toLocaleString("it-IT")}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED }}>{a.userId ?? "—"}</td>
+                  <td style={{ padding: "10px 14px", color: TEXT }}>{a.action}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED }}>{a.resource ?? "—"}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{a.ipAddress ?? "—"}</td>
+                </tr>
+              ))}
+              {(auditLogs ?? []).length === 0 && (
+                <tr><td colSpan={5} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessun evento registrato</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabAffiliates() {
+  const { data, isLoading, refetch } = trpc.superadmin.affiliateList.useQuery();
+  const { data: conversions } = trpc.superadmin.recentConversions.useQuery();
+  const action = trpc.superadmin.affiliateAction.useMutation({
+    onSuccess: () => { refetch(); toast.success("Azione completata"); },
+    onError: e => toast.error(e.message),
+  });
+  const profiles = data?.profiles ?? [];
+  const stats = data?.stats;
+
+  return (
+    <div className="space-y-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+        <KpiCard label="Profili Totali" value={profiles.length} />
+        <KpiCard label="Conversioni Totali" value={stats?.totalConversions ?? 0} />
+        <KpiCard label="Payout in Sospeso" value={`€${Number(stats?.pendingPayouts ?? 0).toLocaleString("it-IT", { minimumFractionDigits: 2 })}`} />
+      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} /></div>
+      ) : (
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 800 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
+                {["Nome", "Email", "Tipo", "Codice", "Stato", "Registrato", "Azioni"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.map((p, i) => (
+                <tr key={p.id} style={{ borderBottom: i < profiles.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <td style={{ padding: "10px 14px", color: TEXT }}>{p.fullName}</td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>{p.email}</td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={p.type} /></td>
+                  <td style={{ padding: "10px 14px", color: GOLD, fontFamily: "monospace", fontSize: 12 }}>{p.affiliateCode}</td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={p.status} /></td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(p.createdAt).toLocaleDateString("it-IT")}</td>
+                  <td style={{ padding: "10px 14px" }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {p.status === "pending" && (
+                        <>
+                          <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} style={{ background: "oklch(20% 0.05 145)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(70% 0.18 145)", fontSize: 11 }}>Approva</button>
+                          <button onClick={() => action.mutate({ affiliateId: p.id, action: "reject" })} style={{ background: "oklch(20% 0.05 25)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(65% 0.18 25)", fontSize: 11 }}>Rifiuta</button>
+                        </>
+                      )}
+                      {p.status === "active" && (
+                        <button onClick={() => action.mutate({ affiliateId: p.id, action: "suspend" })} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: MUTED, fontSize: 11 }}>Sospendi</button>
+                      )}
+                      {p.status === "suspended" && (
+                        <button onClick={() => action.mutate({ affiliateId: p.id, action: "approve" })} style={{ background: "oklch(20% 0.05 145)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: "oklch(70% 0.18 145)", fontSize: 11 }}>Riattiva</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {profiles.length === 0 && (
+                <tr><td colSpan={7} style={{ padding: "32px", textAlign: "center" as const, color: MUTED }}>Nessun profilo affiliato</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div>
+        <div style={{ color: MUTED, fontSize: 12, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10 }}>Conversioni Recenti</div>
+        <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflowX: "auto" as const }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: 13, minWidth: 700 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: CARD }}>
+                {["ID", "Categoria", "Valore Netto", "Commissione", "Stato", "Data"].map(h => (
+                  <th key={h} style={{ padding: "10px 14px", textAlign: "left" as const, color: MUTED, fontWeight: 600, fontSize: 11, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(conversions ?? []).map((c, i) => (
+                <tr key={c.id} style={{ borderBottom: i < (conversions?.length ?? 0) - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12 }}>#{c.id}</td>
+                  <td style={{ padding: "10px 14px", color: TEXT }}>{c.serviceCategory}</td>
+                  <td style={{ padding: "10px 14px", color: GOLD, fontWeight: 600 }}>€{Number(c.contractValueNet).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: "10px 14px", color: "oklch(70% 0.18 145)" }}>€{Number(c.commissionAmount).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: "10px 14px" }}><Badge status={c.status} /></td>
+                  <td style={{ padding: "10px 14px", color: MUTED, fontSize: 12, whiteSpace: "nowrap" as const }}>{new Date(c.createdAt).toLocaleDateString("it-IT")}</td>
+                </tr>
+              ))}
+              {(conversions ?? []).length === 0 && (
+                <tr><td colSpan={6} style={{ padding: "24px", textAlign: "center" as const, color: MUTED }}>Nessuna conversione</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SuperAdmin() {
   const [, setLocation] = useLocation();
-  const [tab, setTab] = useState<Tab>("users");
-  const { data: me } = trpc.auth.me.useQuery();
-  const { data: stats, refetch: refetchStats } = trpc.superadmin.stats.useQuery(undefined, { enabled: me?.role === "superadmin" });
-  const { data: users, isLoading, refetch } = trpc.superadmin.listUsers.useQuery(undefined, { enabled: me?.role === "superadmin" });
-  const [search, setSearch] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
-  const [affFilter, setAffFilter] = useState<"all" | "pending" | "active" | "rejected">("pending");
-  const [affSearch, setAffSearch] = useState("");
-  const [payoutModal, setPayoutModal] = useState<{ id: number; name: string } | null>(null);
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState<"bank" | "paypal" | "crypto">("bank");
-  const [payoutRef, setPayoutRef] = useState("");
-
-  const { data: affiliatesData, refetch: refetchAffiliates } = trpc.affiliate.adminListAffiliates.useQuery(
-    { status: affFilter === "all" ? undefined : affFilter, limit: 100 },
-    { enabled: (me?.role === "admin" || me?.role === "superadmin") && tab === "affiliates" }
-  );
-  const affiliates = affiliatesData?.items ?? [];
-  const updateAffStatus = trpc.affiliate.adminUpdateStatus.useMutation({
-    onSuccess: () => { toast.success(language === "it" ? "Stato aggiornato" : "Status updated"); refetchAffiliates(); }
-  });
-  const registerPayout = trpc.affiliate.adminRegisterPayout.useMutation({
-    onSuccess: () => { toast.success(language === "it" ? "Pagamento registrato" : "Payout registered"); setPayoutModal(null); setPayoutAmount(""); setPayoutRef(""); refetchAffiliates(); }
-  });
-  const [testEmailTo, setTestEmailTo] = useState("");
-  const [smtpResult, setSmtpResult] = useState<{ ok: boolean; error?: string } | null>(null);
-  const { language, setLanguage, t } = useLanguage();
-
-  const updateRole = trpc.superadmin.updateUserRole.useMutation({
-    onSuccess: () => { refetch(); refetchStats(); toast.success("Ruolo aggiornato"); },
-    onError: (e) => toast.error(e.message),
-  });
-  const updateStatus = trpc.superadmin.updateUserStatus.useMutation({
-    onSuccess: () => { refetch(); refetchStats(); toast.success("Stato aggiornato"); },
-    onError: (e) => toast.error(e.message),
-  });
-  const deleteUser = trpc.superadmin.deleteUser.useMutation({
-    onSuccess: () => { refetch(); refetchStats(); setConfirmDelete(null); toast.success("Utente eliminato"); },
-    onError: (e) => toast.error(e.message),
-  });
-  const verifySmtp = trpc.email.verifySmtp.useMutation({
-    onSuccess: (res) => setSmtpResult(res),
-    onError: (e) => setSmtpResult({ ok: false, error: e.message }),
-  });
-  const sendTest = trpc.email.sendTest.useMutation({
-    onSuccess: () => toast.success("Email di test inviata"),
-    onError: (e) => toast.error(e.message),
-  });
+  const [tab, setTab] = useState<Tab>("overview");
+  const { language, setLanguage } = useLanguage();
+  const { data: me, isLoading: meLoading } = trpc.auth.me.useQuery();
   const logout = trpc.auth.logout.useMutation({ onSuccess: () => setLocation("/login") });
 
   useEffect(() => {
     if (me && me.role !== "superadmin") setLocation("/dashboard");
   }, [me]);
 
-  if (!me || me.role !== "superadmin") {
+  if (meLoading || !me || me.role !== "superadmin") {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#050505" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: GOLD }} />
       </div>
     );
   }
 
-  const filtered = (users ?? []).filter(u =>
-    !search || u.name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.company?.toLowerCase().includes(search.toLowerCase())
-  );
-
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: "overview", label: "Overview", icon: <BarChart3 className="h-3.5 w-3.5" /> },
     { key: "users", label: "Utenti", icon: <Users className="h-3.5 w-3.5" /> },
     { key: "email", label: "Email", icon: <Mail className="h-3.5 w-3.5" /> },
     { key: "system", label: "Sistema", icon: <Server className="h-3.5 w-3.5" /> },
-    { key: "affiliates", label: language === "it" ? "Affiliati" : "Affiliates", icon: <Award className="h-3.5 w-3.5" /> },
+    { key: "affiliates", label: "Affiliati", icon: <Award className="h-3.5 w-3.5" /> },
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "#050505", fontFamily: "'Inter', sans-serif" }}>
-      <header className="border-b px-6 h-14 flex items-center justify-between sticky top-0 z-50" style={{ background: BG, borderColor: BORDER }}>
+    <div className="min-h-screen" style={{ background: BG, fontFamily: "'Inter', sans-serif", color: TEXT }}>
+      <header className="sticky top-0 z-50 border-b px-6 h-14 flex items-center justify-between" style={{ background: BG, borderColor: BORDER }}>
         <div className="flex items-center gap-3">
           <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
             <polygon points="16,2 30,10 30,22 16,30 2,22 2,10" stroke={GOLD} strokeWidth="1.5" fill="none" />
@@ -108,552 +528,40 @@ export default function SuperAdmin() {
             <circle cx="16" cy="16" r="3" fill={GOLD} />
           </svg>
           <span className="font-bold text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Dyneros</span>
-          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "oklch(75% 0.22 30 / 0.15)", color: "oklch(75% 0.22 30)" }}>
-            SuperAdmin
-          </span>
+          <span style={{ background: GOLD_DIM, color: GOLD, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" as const, letterSpacing: "0.1em" }}>SuperAdmin</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground hidden sm:block">{me.email}</span>
-          <button
-            onClick={() => setLanguage(language === "it" ? "en" : "it")}
-            className="flex items-center gap-1 h-8 px-2 rounded-lg border text-xs font-semibold hover:bg-white/5 transition-colors"
-            style={{ borderColor: BORDER, color: GOLD }}
-          >
-            <Globe className="h-3.5 w-3.5" />
-            {language.toUpperCase()}
+          <button onClick={() => setLanguage(language === "it" ? "en" : "it")} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 10px", color: MUTED, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+            <Globe className="h-3.5 w-3.5" />{language.toUpperCase()}
           </button>
-          <a href="/dashboard" className="text-sm px-3 h-8 rounded-lg border flex items-center gap-1.5 hover:bg-white/5 transition-colors"
-            style={{ borderColor: BORDER }}>
-            Dashboard
-          </a>
-          <button onClick={() => logout.mutate()} className="text-sm px-3 h-8 rounded-lg flex items-center gap-1.5 hover:bg-white/5 transition-colors text-muted-foreground">
-            <LogOut className="h-3.5 w-3.5" /> {language === "it" ? "Esci" : "Logout"}
+          <span style={{ color: MUTED, fontSize: 13 }}>{me.email}</span>
+          <button onClick={() => logout.mutate()} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "5px 10px", color: MUTED, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+            <LogOut className="h-3.5 w-3.5" /> Esci
           </button>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Crown className="h-5 w-5" style={{ color: "oklch(75% 0.22 30)" }} />
-            <h1 className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Pannello SuperAdmin</h1>
-          </div>
-          <p className="text-sm text-muted-foreground">Gestione completa degli utenti, email e configurazione della piattaforma Dyneros.</p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
-          {[
-            { label: "Utenti totali", value: stats?.total ?? "—", icon: Users, color: GOLD },
-            { label: "Attivi", value: stats?.active ?? "—", icon: UserCheck, color: "oklch(65% 0.22 145)" },
-            { label: "Attivi 30gg", value: stats?.activeUsers30d ?? "—", icon: CheckCircle, color: "oklch(65% 0.18 220)" },
-            { label: "Nuovi questo mese", value: stats?.newThisMonth ?? "—", icon: CheckCircle2, color: "oklch(65% 0.18 220)" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border p-4" style={{ background: BG, borderColor: BORDER }}>
-              <div className="flex items-center gap-2 mb-2">
-                <s.icon className="h-4 w-4" style={{ color: s.color }} />
-                <span className="text-xs text-muted-foreground">{s.label}</span>
-              </div>
-              <div className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: "Fatturato (pagato)", value: stats?.totalRevenue ? `€ ${Number(stats.totalRevenue).toLocaleString("it-IT", { minimumFractionDigits: 2 })}` : "€ 0.00", icon: DollarSign, color: GOLD },
-            { label: "Affiliati attivi", value: stats?.activeAffiliates ?? "—", icon: Award, color: "oklch(68% 0.19 72)" },
-            { label: "Ticket aperti", value: stats?.openTickets ?? "—", icon: AlertTriangle, color: "oklch(65% 0.22 25)" },
-            { label: "Progetti attivi", value: stats?.activeProjects ?? "—", icon: Server, color: "oklch(65% 0.18 220)" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border p-4" style={{ background: BG, borderColor: BORDER }}>
-              <div className="flex items-center gap-2 mb-2">
-                <s.icon className="h-4 w-4" style={{ color: s.color }} />
-                <span className="text-xs text-muted-foreground">{s.label}</span>
-              </div>
-              <div className="text-2xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-1 mb-6 border-b" style={{ borderColor: BORDER }}>
+      <div className="flex" style={{ minHeight: "calc(100vh - 56px)" }}>
+        <aside style={{ width: 200, borderRight: `1px solid ${BORDER}`, padding: "20px 12px", flexShrink: 0 }}>
           {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className="flex items-center gap-2 px-4 h-9 text-sm font-medium transition-all border-b-2 -mb-px"
-              style={tab === t.key
-                ? { borderBottomColor: GOLD, color: GOLD }
-                : { borderBottomColor: "transparent", color: "oklch(55% 0.05 264)" }}>
-              {t.icon}
-              {t.label}
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: "none", background: tab === t.key ? GOLD_DIM : "transparent", color: tab === t.key ? GOLD : MUTED, fontSize: 13, fontWeight: tab === t.key ? 600 : 400, cursor: "pointer", marginBottom: 2, textAlign: "left" as const }}>
+              {t.icon}{t.label}
             </button>
           ))}
-        </div>
-
-        {tab === "users" && (
-          <>
-          <div className="rounded-xl border overflow-hidden mb-5" style={{ background: BG, borderColor: BORDER }}>
-            <div className="px-5 py-4 border-b" style={{ borderColor: BORDER }}>
-              <h2 className="font-semibold text-sm">Ultimi 10 utenti registrati</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-xs text-muted-foreground" style={{ borderColor: BORDER }}>
-                    <th className="text-left px-5 py-3 font-medium">Utente</th>
-                    <th className="text-left px-4 py-3 font-medium">Ruolo</th>
-                    <th className="text-left px-4 py-3 font-medium">Stato</th>
-                    <th className="text-left px-4 py-3 font-medium">Registrato</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(stats?.recentUsers ?? []).map((u) => (
-                    <tr key={u.id} className="border-b hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: "oklch(68% 0.19 72 / 0.15)", color: GOLD }}>
-                            {(u.name ?? u.email ?? "?")[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-medium text-xs">{u.name ?? "—"}</div>
-                            <div className="text-xs text-muted-foreground">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3"><span className="text-xs" style={{ color: ROLE_COLORS[u.role] }}>{u.role}</span></td>
-                      <td className="px-4 py-3"><span className="text-xs" style={{ color: u.status === "active" ? "oklch(65% 0.22 145)" : "oklch(65% 0.22 25)" }}>{u.status}</span></td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("it-IT") : "—"}</td>
-                    </tr>
-                  ))}
-                  {(stats?.recentUsers ?? []).length === 0 && (
-                    <tr><td colSpan={4} className="text-center py-8 text-muted-foreground text-xs">Nessun utente</td></tr>
-                  )}
-                </tbody>
-              </table>
+        </aside>
+        <main style={{ flex: 1, padding: 28, overflowX: "auto" as const }}>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ color: TEXT, fontSize: 18, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>
+              {TABS.find(t => t.key === tab)?.label}
             </div>
           </div>
-          <div className="rounded-xl border overflow-hidden" style={{ background: BG, borderColor: BORDER }}>
-            <div className="px-5 py-4 border-b flex items-center justify-between gap-4" style={{ borderColor: BORDER }}>
-              <h2 className="font-semibold text-sm">Gestione Utenti</h2>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input type="text" placeholder="Cerca per nome, email, azienda..." value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="h-8 pl-8 pr-4 rounded-lg text-sm border focus:outline-none w-64"
-                  style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "inherit" }} />
-              </div>
-            </div>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-6 w-6 animate-spin" style={{ color: GOLD }} />
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-xs text-muted-foreground" style={{ borderColor: BORDER }}>
-                      <th className="text-left px-5 py-3 font-medium">Utente</th>
-                      <th className="text-left px-4 py-3 font-medium">Azienda</th>
-                      <th className="text-left px-4 py-3 font-medium">Ruolo</th>
-                      <th className="text-left px-4 py-3 font-medium">Stato</th>
-                      <th className="text-left px-4 py-3 font-medium">Registrato</th>
-                      <th className="text-left px-4 py-3 font-medium">Ultimo accesso</th>
-                      <th className="text-right px-5 py-3 font-medium">Azioni</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((u) => (
-                      <tr key={u.id} className="border-b hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                              style={{ background: "oklch(68% 0.19 72 / 0.15)", color: GOLD }}>
-                              {(u.name ?? u.email ?? "?")[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-medium">{u.name ?? "—"}</div>
-                              <div className="text-xs text-muted-foreground">{u.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">{u.company ?? "—"}</td>
-                        <td className="px-4 py-3">
-                          <select value={u.role}
-                            onChange={e => updateRole.mutate({ userId: u.id, role: e.target.value as "user" | "admin" | "superadmin" })}
-                            disabled={u.id === me.id}
-                            className="text-xs px-2 py-1 rounded-md border focus:outline-none disabled:opacity-50"
-                            style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: ROLE_COLORS[u.role] }}>
-                            <option value="user">Utente</option>
-                            <option value="admin">Admin</option>
-                            <option value="superadmin">SuperAdmin</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => updateStatus.mutate({ userId: u.id, status: u.status === "active" ? "suspended" : "active" })}
-                            disabled={u.id === me.id}
-                            className="text-xs px-2.5 py-1 rounded-full font-medium disabled:opacity-50 transition-opacity"
-                            style={{
-                              background: u.status === "active" ? "oklch(65% 0.22 145 / 0.15)" : "oklch(65% 0.22 25 / 0.15)",
-                              color: u.status === "active" ? "oklch(65% 0.22 145)" : "oklch(65% 0.22 25)",
-                            }}>
-                            {u.status === "active" ? "Attivo" : "Sospeso"}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString("it-IT") : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {u.lastSignedIn ? new Date(u.lastSignedIn).toLocaleDateString("it-IT") : "—"}
-                        </td>
-                        <td className="px-5 py-3 text-right">
-                          {u.id !== me.id && (
-                            <button onClick={() => setConfirmDelete(u.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr><td colSpan={7} className="text-center py-12 text-muted-foreground">Nessun utente trovato</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-          </>
-        )}
-
-        {tab === "email" && (
-          <div className="space-y-5 max-w-2xl">
-            <div className="rounded-xl border p-5" style={{ background: BG, borderColor: BORDER }}>
-              <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Mail className="h-4 w-4" style={{ color: GOLD }} />
-                Verifica Configurazione SMTP
-              </h2>
-              <p className="text-xs text-muted-foreground mb-4">
-                Verifica che il server SMTP sia configurato correttamente e che le email vengano inviate.
-              </p>
-              <button onClick={() => verifySmtp.mutate()} disabled={verifySmtp.isPending}
-                className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium disabled:opacity-50"
-                style={{ background: GOLD, color: "#000" }}>
-                {verifySmtp.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
-                Verifica SMTP
-              </button>
-              {smtpResult && (
-                <div className="mt-3 p-3 rounded-lg flex items-center gap-2"
-                  style={{ background: smtpResult.ok ? "oklch(60% 0.18 145 / 0.08)" : "oklch(55% 0.22 25 / 0.08)", border: `1px solid ${smtpResult.ok ? "oklch(60% 0.18 145 / 0.3)" : "oklch(55% 0.22 25 / 0.3)"}` }}>
-                  {smtpResult.ok
-                    ? <><CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" /><p className="text-sm text-green-400">SMTP configurato correttamente</p></>
-                    : <><AlertTriangle className="h-4 w-4 text-red-400 shrink-0" /><p className="text-sm text-red-400">{smtpResult.error || "Errore SMTP"}</p></>
-                  }
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-xl border p-5" style={{ background: BG, borderColor: BORDER }}>
-              <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Send className="h-4 w-4" style={{ color: GOLD }} />
-                Invia Email di Test
-              </h2>
-              <div className="flex gap-3">
-                <input value={testEmailTo} onChange={e => setTestEmailTo(e.target.value)}
-                  type="email" placeholder="destinatario@esempio.com"
-                  className="flex-1 h-9 px-3 rounded-lg text-sm border focus:outline-none"
-                  style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "inherit" }} />
-                <button onClick={() => { if (!testEmailTo) return toast.error("Inserisci un destinatario"); sendTest.mutate({ to: testEmailTo }); }}
-                  disabled={sendTest.isPending}
-                  className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium disabled:opacity-50"
-                  style={{ background: GOLD, color: "#000" }}>
-                  {sendTest.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                  Invia
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "system" && (
-          <div className="space-y-5 max-w-2xl">
-            <div className="rounded-xl border p-5" style={{ background: BG, borderColor: BORDER }}>
-              <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Server className="h-4 w-4" style={{ color: GOLD }} />
-                Informazioni Sistema
-              </h2>
-              <div className="space-y-2">
-                {[
-                  { label: "Versione Piattaforma", value: "Dyneros v2.1.0" },
-                  { label: "Ambiente", value: "Production" },
-                  { label: "Database", value: "TiDB Serverless" },
-                  { label: "Runtime", value: "Node.js 22 / Express 4" },
-                  { label: "Chain", value: "DYNEROS Mainnet (ChainID: 24589)" },
-                  { label: "RPC", value: "https://mainnet.dyneros.com" },
-                ].map(item => (
-                  <div key={item.label} className="flex items-center justify-between p-3 rounded-lg"
-                    style={{ background: "oklch(12% 0.006 264)", border: `1px solid ${BORDER}` }}>
-                    <span className="text-xs text-muted-foreground">{item.label}</span>
-                    <span className="text-xs font-mono font-medium">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-xl border p-5" style={{ background: BG, borderColor: BORDER }}>
-              <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Shield className="h-4 w-4" style={{ color: GOLD }} />
-                Stato Servizi
-              </h2>
-              <div className="space-y-2">
-                {[
-                  { name: "API Server", status: "online" },
-                  { name: "Database", status: "online" },
-                  { name: "Email SMTP", status: "online" },
-                  { name: "Blockchain RPC", status: "online" },
-                  { name: "Storage S3", status: "online" },
-                ].map(svc => (
-                  <div key={svc.name} className="flex items-center justify-between p-3 rounded-lg"
-                    style={{ background: "oklch(12% 0.006 264)", border: `1px solid ${BORDER}` }}>
-                    <span className="text-sm">{svc.name}</span>
-                    <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "oklch(65% 0.22 145)" }}>
-                      <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
-                      {svc.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-        {tab === "affiliates" && (
-          <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-              <div className="flex gap-1">
-                {(["all", "pending", "active", "rejected"] as const).map(f => (
-                  <button key={f} onClick={() => setAffFilter(f)}
-                    className="px-3 h-8 rounded-lg text-xs font-medium transition-all"
-                    style={affFilter === f ? { background: GOLD, color: "#000" } : { border: `1px solid ${BORDER}`, color: "oklch(55% 0.05 264)" }}>
-                    {f === "all" ? (language === "it" ? "Tutti" : "All") : f.charAt(0).toUpperCase() + f.slice(1)}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input value={affSearch} onChange={e => setAffSearch(e.target.value)}
-                    placeholder={language === "it" ? "Cerca affiliato..." : "Search affiliate..."}
-                    className="pl-9 pr-4 h-8 rounded-lg border bg-transparent text-sm w-56 focus:outline-none"
-                    style={{ borderColor: BORDER }} />
-                </div>
-                <button
-                  onClick={() => {
-                    const rows = affiliates.filter(a =>
-                      !affSearch ||
-                      a.fullName.toLowerCase().includes(affSearch.toLowerCase()) ||
-                      a.email.toLowerCase().includes(affSearch.toLowerCase()) ||
-                      a.affiliateCode.includes(affSearch)
-                    );
-                    const header = ["Nome", "Email", "Codice", "Tipo", "Stato", "Creato"].join(",");
-                    const csvRows = rows.map(a =>
-                      [
-                        `"${a.fullName}"`,
-                        `"${a.email}"`,
-                        a.affiliateCode,
-                        a.type,
-                        a.status,
-                        new Date(a.createdAt).toLocaleDateString("it-IT"),
-                      ].join(",")
-                    );
-                    const blob = new Blob([[header, ...csvRows].join("\n")], { type: "text/csv;charset=utf-8;" });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = `affiliati-${new Date().toISOString().slice(0,10)}.csv`;
-                    link.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors hover:bg-white/10"
-                  style={{ border: `1px solid ${BORDER}`, color: GOLD }}
-                  title={language === "it" ? "Esporta CSV" : "Export CSV"}
-                >
-                  <FileDown className="h-3.5 w-3.5" />
-                  CSV
-                </button>
-              </div>
-            </div>
-            <div className="rounded-xl border overflow-hidden" style={{ background: BG, borderColor: BORDER }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b" style={{ borderColor: BORDER }}>
-                    <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Nome" : "Name"}</th>
-                    <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Codice" : "Code"}</th>
-                    <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground">Tipo</th>
-                    <th className="text-center px-5 py-3 text-xs font-medium text-muted-foreground">Status</th>
-                    <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Commissioni" : "Commissions"}</th>
-                    <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground">{language === "it" ? "Azioni" : "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {affiliates.filter(a =>
-                    !affSearch ||
-                    a.fullName.toLowerCase().includes(affSearch.toLowerCase()) ||
-                    a.email.toLowerCase().includes(affSearch.toLowerCase()) ||
-                    a.affiliateCode.includes(affSearch)
-                  ).map(aff => (
-                    <tr key={aff.id} className="border-b hover:bg-white/[0.02] transition-colors" style={{ borderColor: BORDER }}>
-                      <td className="px-5 py-3">
-                        <div className="font-medium">{aff.fullName}</div>
-                        <div className="text-xs text-muted-foreground">{aff.email}</div>
-                      </td>
-                      <td className="px-5 py-3 font-mono text-xs" style={{ color: GOLD }}>{aff.affiliateCode}</td>
-                      <td className="px-5 py-3">
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "oklch(60% 0.18 264 / 0.15)", color: "oklch(70% 0.18 264)" }}>
-                          {aff.type}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                          background: aff.status === "active" ? "oklch(65% 0.22 145 / 0.15)" : aff.status === "pending" ? "oklch(68% 0.19 72 / 0.15)" : "oklch(65% 0.22 25 / 0.15)",
-                          color: aff.status === "active" ? "oklch(65% 0.22 145)" : aff.status === "pending" ? GOLD : "oklch(65% 0.22 25)",
-                        }}>{aff.status}</span>
-                      </td>
-                      <td className="px-5 py-3 text-right font-medium">
-                        —
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center justify-end gap-2">
-                          {aff.status === "pending" && (
-                            <>
-                              <button onClick={() => updateAffStatus.mutate({ affiliateId: aff.id, status: "active" })}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-green-500/10 transition-colors"
-                                title={language === "it" ? "Approva" : "Approve"}
-                                style={{ color: "oklch(65% 0.22 145)" }}>
-                                <Check className="h-3.5 w-3.5" />
-                              </button>
-                              <button onClick={() => updateAffStatus.mutate({ affiliateId: aff.id, status: "rejected" })}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-red-500/10 transition-colors"
-                                title={language === "it" ? "Rifiuta" : "Reject"}
-                                style={{ color: "oklch(65% 0.22 25)" }}>
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </>
-                          )}
-                          {aff.status === "active" && (
-                            <button onClick={() => setPayoutModal({ id: aff.id, name: aff.fullName })}
-                              className="h-7 px-2 rounded-lg flex items-center gap-1 text-xs hover:bg-white/10 transition-colors"
-                              style={{ border: `1px solid ${BORDER}`, color: GOLD }}>
-                              <Wallet className="h-3 w-3" />
-                              Payout
-                            </button>
-                          )}
-                          {aff.status === "active" && (
-                            <button onClick={() => updateAffStatus.mutate({ affiliateId: aff.id, status: "suspended" })}
-                              className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-red-500/10 transition-colors"
-                              title={language === "it" ? "Sospendi" : "Suspend"}
-                              style={{ color: "oklch(65% 0.22 25)" }}>
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {affiliates.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
-                      {language === "it" ? "Nessun affiliato trovato" : "No affiliates found"}
-                    </td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+          {tab === "overview" && <TabOverview />}
+          {tab === "users" && <TabUsers />}
+          {tab === "email" && <TabEmail />}
+          {tab === "system" && <TabSystem />}
+          {tab === "affiliates" && <TabAffiliates />}
+        </main>
       </div>
-
-      {payoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "oklch(0% 0 0 / 0.7)" }}>
-          <div className="rounded-2xl border p-6 w-full max-w-sm" style={{ background: BG, borderColor: BORDER }}>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${GOLD}22` }}>
-                <DollarSign className="h-5 w-5" style={{ color: GOLD }} />
-              </div>
-              <div>
-                <h3 className="font-semibold">{language === "it" ? "Registra Payout" : "Register Payout"}</h3>
-                <p className="text-xs text-muted-foreground">{payoutModal.name}</p>
-              </div>
-            </div>
-            <div className="space-y-3 mb-5">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">{language === "it" ? "Importo (€)" : "Amount (€)"}</label>
-                <input value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} type="number" step="0.01" min="0"
-                  placeholder="0.00" className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none"
-                  style={{ borderColor: BORDER }} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">{language === "it" ? "Metodo" : "Method"}</label>
-                <select value={payoutMethod} onChange={e => setPayoutMethod(e.target.value as "bank" | "paypal" | "crypto")}
-                  className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none"
-                  style={{ borderColor: BORDER, background: BG }}>
-                  <option value="bank">Bank Transfer</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="crypto">Crypto</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">{language === "it" ? "Riferimento" : "Reference"}</label>
-                <input value={payoutRef} onChange={e => setPayoutRef(e.target.value)}
-                  placeholder={language === "it" ? "Numero bonifico / TX hash..." : "Wire number / TX hash..."}
-                  className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none"
-                  style={{ borderColor: BORDER }} />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setPayoutModal(null)}
-                className="flex-1 h-9 rounded-lg border text-sm hover:bg-white/5 transition-colors" style={{ borderColor: BORDER }}>
-                {language === "it" ? "Annulla" : "Cancel"}
-              </button>
-              <button
-                onClick={() => registerPayout.mutate({ affiliateProfileId: payoutModal.id, amount: payoutAmount, method: payoutMethod, reference: payoutRef || undefined })}
-                disabled={!payoutAmount || registerPayout.isPending}
-                className="flex-1 h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ background: GOLD, color: "#000" }}>
-                {registerPayout.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {language === "it" ? "Registra" : "Register"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmDelete !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "oklch(0% 0 0 / 0.7)" }}>
-          <div className="rounded-2xl border p-6 w-full max-w-sm" style={{ background: BG, borderColor: BORDER }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "oklch(55% 0.22 25 / 0.15)" }}>
-                <AlertTriangle className="h-5 w-5" style={{ color: "oklch(65% 0.22 25)" }} />
-              </div>
-              <div>
-                <h3 className="font-semibold">{t("admin.delete_user")}</h3>
-                <p className="text-xs text-muted-foreground">{t("admin.irreversible")}</p>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              {t("admin.delete_confirm_msg")}
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)}
-                className="flex-1 h-9 rounded-lg border text-sm hover:bg-white/5 transition-colors" style={{ borderColor: BORDER }}>
-                Annulla
-              </button>
-              <button onClick={() => deleteUser.mutate({ userId: confirmDelete })} disabled={deleteUser.isPending}
-                className="flex-1 h-9 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ background: "oklch(55% 0.22 25)", color: "#fff" }}>
-                {deleteUser.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Elimina
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
