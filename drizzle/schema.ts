@@ -323,6 +323,7 @@ export const affiliateProfiles = mysqlTable("affiliate_profiles", {
   affiliateCode: varchar("affiliateCode", { length: 30 }).notNull().unique(),
   parentAffiliateId: int("parentAffiliateId"),
   referralUrl: varchar("referralUrl", { length: 500 }),
+  commissionRate: decimal("commissionRate", { precision: 5, scale: 2 }).default("10.00").notNull(),
   notes: text("notes"),
   approvedAt: timestamp("approvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE `affiliate_profiles` ADD `commissionRate` decimal(5,2) DEFAULT '10.00' NOT NULL;

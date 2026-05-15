@@ -1234,7 +1234,7 @@ export const appRouter = router({
         if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
         const db = await getDb();
         if (!db) throw new Error("Database non disponibile");
-        await db.update(affiliateProfiles).set({ notes: `Commissione: ${input.commission}%` }).where(eq(affiliateProfiles.id, input.affiliateId));
+        await db.update(affiliateProfiles).set({ commissionRate: input.commission.toString() }).where(eq(affiliateProfiles.id, input.affiliateId));
         return { success: true };
       }),
 
