@@ -9,7 +9,7 @@ import {
   documents, wallets, smartContracts, domains, aiProjects,
   notifications, userSettings, apiKeys, auditLog,
   affiliateProfiles, affiliateConversions, affiliatePayouts,
-  affiliateLeads, emailLog
+  affiliateLeads, affiliateClicks, emailLog
 } from "../drizzle/schema";
 import { COOKIE_NAME } from "@shared/const";
 import {
@@ -1066,13 +1066,14 @@ export const appRouter = router({
     affiliateList: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
       const db = await getDb();
-      if (!db) return { profiles: [], stats: { totalConversions: 0, pendingPayouts: "0" } };
-      const [profiles, convRows, payoutRows] = await Promise.all([
-        db.select().from(affiliateProfiles).orderBy(desc(affiliateProfiles.createdAt)),
-        db.select({ c: count() }).from(affiliateConversions),
-        db.select({ s: sum(affiliatePayouts.amount) }).from(affiliatePayouts).where(eq(affiliatePayouts.status, "pending")),
-      ]);
-      return { profiles, stats: { totalConversions: convRows[0]?.c ?? 0, pendingPayouts: payoutRows[0]?.s ?? "0" } };
+      if (!db) return [];
+      const profiles = await db.select({ profile: affiliateProfiles, userName: users.name, userEmail: users.email }).from(affiliateProfiles).leftJoin(users, eq(affiliateProfiles.userId, users.id)).orderBy(desc(affiliateProfiles.createdAt));
+      const result = await Promise.all(profiles.map(async (row) => {
+        const [clicksRow] = await db.select({ c: count() }).from(affiliateClicks).where(eq(affiliateClicks.affiliateId, row.profile.id));
+        const [convRow] = await db.select({ c: count() }).from(affiliateConversions).where(eq(affiliateConversions.affiliateId, row.profile.id));
+        return { ...row.profile, userName: row.userName, userEmail: row.userEmail, clicks: clicksRow?.c ?? 0, conversions: convRow?.c ?? 0 };
+      }));
+      return result;
     }),
 
     affiliateAction: protectedProcedure
@@ -1082,7 +1083,18 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("Database non disponibile");
         const newStatus = input.action === "approve" ? "active" : input.action === "suspend" ? "suspended" : "rejected";
-        await db.update(affiliateProfiles).set({ status: newStatus as "active" | "suspended" | "rejected", approvedAt: input.action === "approve" ? new Date() : null }).where(eq(affiliateProfiles.id, input.affiliateId));
+        if (input.action === "approve") {
+          const [row] = await db.select({ p: affiliateProfiles, userName: users.name, userEmail: users.email })
+            .from(affiliateProfiles).leftJoin(users, eq(affiliateProfiles.userId, users.id))
+            .where(eq(affiliateProfiles.id, input.affiliateId)).limit(1);
+          await db.update(affiliateProfiles).set({ status: "active", approvedAt: new Date() }).where(eq(affiliateProfiles.id, input.affiliateId));
+          if (row) {
+            const { notifyOwner } = await import("./_core/notification.js");
+            await notifyOwner({ title: "Nuovo Affiliato Approvato", content: `L'affiliato ${row.userName ?? row.userEmail ?? `#${input.affiliateId}`} (codice: ${row.p.affiliateCode}) è stato approvato.` }).catch(() => {});
+          }
+        } else {
+          await db.update(affiliateProfiles).set({ status: newStatus as "suspended" | "rejected", approvedAt: null }).where(eq(affiliateProfiles.id, input.affiliateId));
+        }
         return { success: true };
       }),
 
@@ -1125,6 +1137,18 @@ export const appRouter = router({
       };
      }),
 
+    approveProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const [project] = await db.select().from(projects).where(eq(projects.id, input.projectId)).limit(1);
+        if (!project) throw new Error("Progetto non trovato");
+        await db.update(projects).set({ status: "in_progress" }).where(eq(projects.id, input.projectId));
+        await db.insert(notifications).values({ userId: project.userId, type: "milestone", title: "\u2705 Progetto approvato", message: `Il tuo progetto "${project.name}" \u00e8 stato approvato dal team Dyneros ed \u00e8 ora in lavorazione.`, read: false });
+        return { success: true };
+      }),
     allProjects: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
       const db = await getDb();
@@ -1136,7 +1160,12 @@ export const appRouter = router({
       if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
       const db = await getDb();
       if (!db) return [];
-      return db.select({ ticket: tickets, userName: users.name, userEmail: users.email }).from(tickets).leftJoin(users, eq(tickets.userId, users.id)).orderBy(desc(tickets.createdAt));
+      const rows = await db.select({ ticket: tickets, userName: users.name, userEmail: users.email }).from(tickets).leftJoin(users, eq(tickets.userId, users.id)).orderBy(desc(tickets.createdAt));
+      const result = await Promise.all(rows.map(async (row) => {
+        const replies = await db.select({ id: ticketReplies.id, message: ticketReplies.message, isStaff: ticketReplies.isStaff, createdAt: ticketReplies.createdAt }).from(ticketReplies).where(eq(ticketReplies.ticketId, row.ticket.id)).orderBy(asc(ticketReplies.createdAt));
+        return { ticket: row.ticket, userName: row.userName, userEmail: row.userEmail, replies };
+      }));
+      return result;
     }),
 
     allInvoices: protectedProcedure.query(async ({ ctx }) => {

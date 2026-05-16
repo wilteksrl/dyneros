@@ -158,41 +158,93 @@ function SectionOverview() {
       )}
     </div>
   );
-}
-
-function SectionUsers() {
+}function SectionUsers() {
+  const utils = trpc.useUtils();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<"all" | "user" | "admin" | "superadmin">("all");
   const [status, setStatus] = useState<"all" | "active" | "suspended" | "pending">("all");
+  const [showCreate, setShowCreate] = useState(false);
+  const [showNotify, setShowNotify] = useState<number | null>(null);
+  const [createForm, setCreateForm] = useState({ name: "", email: "", password: "", role: "user", company: "" });
+  const [notifyForm, setNotifyForm] = useState({ title: "", message: "", type: "system" });
   const LIMIT = 25;
   const { data, isLoading, refetch } = trpc.superadmin.listUsersPaged.useQuery({ page, limit: LIMIT, search: search || undefined, role, status });
   const updateRole = trpc.superadmin.updateUserRole.useMutation({ onSuccess: () => { toast.success("Ruolo aggiornato"); refetch(); } });
   const updateStatus = trpc.superadmin.updateUserStatus.useMutation({ onSuccess: () => { toast.success("Stato aggiornato"); refetch(); } });
   const deleteUser = trpc.superadmin.deleteUser.useMutation({ onSuccess: () => { toast.success("Utente eliminato"); refetch(); } });
+  const createUser = trpc.superadmin.createUser.useMutation({ onSuccess: () => { toast.success("Utente creato"); refetch(); setShowCreate(false); setCreateForm({ name: "", email: "", password: "", role: "user", company: "" }); } });
+  const sendNotif = trpc.superadmin.sendNotificationToUser.useMutation({ onSuccess: () => { toast.success("Notifica inviata"); setShowNotify(null); setNotifyForm({ title: "", message: "", type: "system" }); } });
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Cerca nome o email…"
-          className="h-8 px-3 rounded-lg border text-sm bg-transparent outline-none focus:border-amber-500/50 transition-colors"
-          style={{ borderColor: BORDER, minWidth: 200 }} />
-        <select value={role} onChange={e => { setRole(e.target.value as typeof role); setPage(1); }}
-          className="h-8 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none"
-          style={{ borderColor: BORDER }}>
-          <option value="all">Tutti i ruoli</option>
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-          <option value="superadmin">SuperAdmin</option>
-        </select>
-        <select value={status} onChange={e => { setStatus(e.target.value as typeof status); setPage(1); }}
-          className="h-8 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none"
-          style={{ borderColor: BORDER }}>
-          <option value="all">Tutti gli stati</option>
-          <option value="active">Attivo</option>
-          <option value="suspended">Sospeso</option>
-          <option value="pending">Pending</option>
-        </select>
+      <div className="flex flex-wrap gap-2 justify-between">
+        <div className="flex flex-wrap gap-2">
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Cerca nome o email…"
+            className="h-8 px-3 rounded-lg border text-sm bg-transparent outline-none focus:border-amber-500/50 transition-colors"
+            style={{ borderColor: BORDER, minWidth: 200 }} />
+          <select value={role} onChange={e => { setRole(e.target.value as typeof role); setPage(1); }}
+            className="h-8 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none"
+            style={{ borderColor: BORDER }}>
+            <option value="all">Tutti i ruoli</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">SuperAdmin</option>
+          </select>
+          <select value={status} onChange={e => { setStatus(e.target.value as typeof status); setPage(1); }}
+            className="h-8 px-3 rounded-lg border text-sm bg-[oklch(10%_0.006_264)] outline-none"
+            style={{ borderColor: BORDER }}>
+            <option value="all">Tutti gli stati</option>
+            <option value="active">Attivo</option>
+            <option value="suspended">Sospeso</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}>
+          <Plus className="h-3.5 w-3.5" /> Crea Utente
+        </button>
       </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <h4 className="text-sm font-semibold">Nuovo Utente</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Nome completo" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Email *</label>
+              <input type="email" value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="email@esempio.com" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Password *</label>
+              <input type="password" value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Min. 8 caratteri" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Ruolo</label>
+              <select value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="user">User</option><option value="admin">Admin</option><option value="superadmin">SuperAdmin</option>
+              </select></div>
+            <div className="col-span-2"><label className="text-[10px] text-muted-foreground mb-1 block">Azienda</label>
+              <input value={createForm.company} onChange={e => setCreateForm(f => ({ ...f, company: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Opzionale" /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={createUser.isPending || !createForm.name || !createForm.email || createForm.password.length < 8} onClick={() => createUser.mutate({ name: createForm.name, email: createForm.email, password: createForm.password, role: createForm.role as "user"|"admin"|"superadmin", company: createForm.company || undefined })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Crea</button>
+          </div>
+        </div>
+      )}
+      {showNotify !== null && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <h4 className="text-sm font-semibold">Invia Notifica a Utente #{showNotify}</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Titolo *</label>
+              <input value={notifyForm.title} onChange={e => setNotifyForm(f => ({ ...f, title: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Tipo</label>
+              <select value={notifyForm.type} onChange={e => setNotifyForm(f => ({ ...f, type: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="system">System</option><option value="alert">Alert</option><option value="invoice">Invoice</option><option value="milestone">Milestone</option><option value="ticket_update">Ticket Update</option>
+              </select></div>
+            <div className="col-span-2"><label className="text-[10px] text-muted-foreground mb-1 block">Messaggio *</label>
+              <textarea value={notifyForm.message} onChange={e => setNotifyForm(f => ({ ...f, message: e.target.value }))} rows={2} className="w-full px-2 py-1.5 rounded border text-xs bg-transparent outline-none resize-none" style={{ borderColor: BORDER }} /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowNotify(null)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={sendNotif.isPending || !notifyForm.title || !notifyForm.message} onClick={() => sendNotif.mutate({ userId: showNotify!, title: notifyForm.title, message: notifyForm.message, type: notifyForm.type as "system"|"alert"|"invoice"|"milestone"|"ticket_update"|"deployment" })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Invia</button>
+          </div>
+        </div>
+      )}
       {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
           <table className="w-full text-sm">
@@ -234,6 +286,8 @@ function SectionUsers() {
                       }
                       <button onClick={() => { if (confirm("Eliminare utente?")) deleteUser.mutate({ userId: u.id }); }}
                         className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-red-500/10" style={{ borderColor: BORDER, color: "oklch(55% 0.22 25)" }}>Elimina</button>
+                      <button onClick={() => { setShowNotify(u.id); setNotifyForm({ title: "", message: "", type: "system" }); }}
+                        className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-amber-500/10" style={{ borderColor: BORDER, color: GOLD }}>Notifica</button>
                     </div>
                   </td>
                 </tr>
@@ -334,6 +388,7 @@ function SectionAllProjects() {
                         <option value="completed">Completato</option>
                         <option value="on_hold">On Hold</option>
                       </select>
+                      {row.project.status === "planning" && <button onClick={() => updateStatus.mutate({ projectId: row.project.id, status: "in_progress" })} className="text-[10px] px-2 py-1 rounded border" style={{ borderColor: "oklch(60% 0.18 145 / 0.4)", color: "oklch(60% 0.18 145)" }}>Approva</button>}
                       <button onClick={() => { if (confirm("Eliminare?")) deleteProj.mutate({ projectId: row.project.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </td>
@@ -608,21 +663,22 @@ function SectionAffiliates() {
   const setCommission = trpc.superadmin.setAffiliateCommission.useMutation({ onSuccess: () => { toast.success("Commissione aggiornata"); utils.superadmin.affiliateList.invalidate(); } });
   const [editingCommission, setEditingCommission] = useState<Record<number, string>>({});
   if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.profiles.length === 0) return <EmptyState icon={Link2} text="Nessun affiliato presente" />;
+  if (!data || data.length === 0) return <EmptyState icon={Link2} text="Nessun affiliato presente" />;
+  const totalConversions = data.reduce((s: number, p: any) => s + (p.conversions ?? 0), 0);
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Affiliati</p>
-          <p className="text-2xl font-semibold">{data.profiles.length}</p>
+          <p className="text-2xl font-semibold">{data.length}</p>
         </div>
         <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: BORDER }}>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Conversioni</p>
-          <p className="text-2xl font-semibold">{data.stats.totalConversions}</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Conversioni Totali</p>
+          <p className="text-2xl font-semibold">{totalConversions}</p>
         </div>
         <div className="rounded-xl border p-4" style={{ background: CARD_BG, borderColor: "oklch(68% 0.19 72 / 0.3)" }}>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Payout Pending (€)</p>
-          <p className="text-2xl font-semibold" style={{ color: GOLD }}>{parseFloat(data.stats.pendingPayouts || "0").toLocaleString("it-IT")}</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Attivi</p>
+          <p className="text-2xl font-semibold" style={{ color: GOLD }}>{data.filter((p: any) => p.status === "active").length}</p>
         </div>
       </div>
       <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
@@ -636,7 +692,7 @@ function SectionAffiliates() {
             </tr>
           </thead>
           <tbody>
-            {data.profiles.map((p: { id: number; affiliateCode: string; status: string; commissionRate?: string | null; notes?: string | null }) => (
+            {data.map((p: any) => (
               <tr key={p.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
                 <td className="px-4 py-2.5 font-mono text-xs">{p.affiliateCode}</td>
                 <td className="px-4 py-2.5"><Badge label={p.status} color={p.status === "active" ? "oklch(60% 0.18 145)" : p.status === "pending" ? GOLD : "oklch(55% 0.22 25)"} /></td>
