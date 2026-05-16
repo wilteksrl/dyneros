@@ -883,11 +883,19 @@ export const appRouter = router({
         user: process.env.SMTP_USER ?? "",
         fromName: process.env.SMTP_FROM_NAME ?? "",
         fromEmail: process.env.SMTP_FROM_EMAIL ?? "",
-        configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+         configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
       };
     }),
-  }),
 
+    deleteProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(projects).where(and(eq(projects.id, input.projectId), eq(projects.userId, ctx.user.id)));
+        return { success: true };
+      }),
+  }),
   superadmin: router({
     listUsers: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
@@ -1247,6 +1255,419 @@ export const appRouter = router({
         const { key, prefix, hash } = generateApiKey();
         await db.insert(apiKeys).values({ userId: input.userId, name: input.name, keyHash: hash, keyPrefix: prefix, scopes: input.scopes });
         return { success: true, key };
+      }),
+
+    deleteProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(projects).where(and(eq(projects.id, input.projectId), eq(projects.userId, ctx.user.id)));
+        return { success: true };
+      }),
+
+    createProjectForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string().min(3),
+        type: z.enum(["blockchain_infrastructure", "smart_contract", "web_app", "ai_system", "other"]).default("other"),
+        priority: z.enum(["low", "medium", "high"]).default("medium"),
+        environment: z.string().default("production"),
+        status: z.enum(["planning", "in_progress", "completed", "on_hold"]).default("planning"),
+        eta: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const env = (input.environment === "development" ? "dev" : input.environment) as "dev" | "staging" | "production";
+        await db.insert(projects).values({
+          userId: input.userId,
+          name: input.name,
+          type: input.type,
+          priority: input.priority,
+          environment: env,
+          status: input.status,
+          eta: input.eta ? new Date(input.eta) : null,
+          description: input.description ?? null,
+          progress: 0,
+          startDate: new Date(),
+        });
+        return { success: true };
+      }),
+
+    adminDeleteProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(projects).where(eq(projects.id, input.projectId));
+        return { success: true };
+      }),
+
+    createTicketForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        subject: z.string().min(5),
+        category: z.string().default("general"),
+        priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+        description: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const ticketNumber = `TKT-${Date.now()}`;
+        await db.insert(tickets).values({
+          userId: input.userId,
+          ticketNumber,
+          subject: input.subject,
+          category: input.category,
+          priority: input.priority,
+          description: input.description,
+          status: "open",
+        });
+        return { success: true };
+      }),
+
+    deleteTicket: protectedProcedure
+      .input(z.object({ ticketId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(ticketReplies).where(eq(ticketReplies.ticketId, input.ticketId));
+        await db.delete(tickets).where(eq(tickets.id, input.ticketId));
+        return { success: true };
+      }),
+
+    updateTicketPriority: protectedProcedure
+      .input(z.object({ ticketId: z.number(), priority: z.enum(["low", "medium", "high", "critical"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(tickets).set({ priority: input.priority }).where(eq(tickets.id, input.ticketId));
+        return { success: true };
+      }),
+
+    createInvoice: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        amount: z.number().positive(),
+        currency: z.string().default("EUR"),
+        description: z.string(),
+        dueDate: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const invoiceNumber = `INV-${Date.now()}`;
+        const now = new Date();
+        const due = input.dueDate ? new Date(input.dueDate) : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        await db.insert(invoices).values({
+          userId: input.userId,
+          invoiceNumber,
+          amount: input.amount.toString(),
+          currency: input.currency,
+          description: input.description,
+          status: "unpaid",
+          issued: now,
+          due,
+        });
+        return { success: true };
+      }),
+
+    updateInvoiceStatus: protectedProcedure
+      .input(z.object({ invoiceId: z.number(), status: z.enum(["paid", "unpaid", "overdue"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(invoices).set({ status: input.status }).where(eq(invoices.id, input.invoiceId));
+        return { success: true };
+      }),
+
+    deleteInvoice: protectedProcedure
+      .input(z.object({ invoiceId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(invoices).where(eq(invoices.id, input.invoiceId));
+        return { success: true };
+      }),
+
+    createContract: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        contractName: z.string(),
+        type: z.enum(["NDA", "Service Agreement", "Statement of Work", "Other"]).default("Other"),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(contracts).values({
+          userId: input.userId,
+          contractName: input.contractName,
+          type: input.type,
+          status: "active",
+          startDate: input.startDate ? new Date(input.startDate) : null,
+          endDate: input.endDate ? new Date(input.endDate) : null,
+        });
+        return { success: true };
+      }),
+
+    updateContractStatus: protectedProcedure
+      .input(z.object({ contractId: z.number(), status: z.enum(["draft", "active", "signed", "expired"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(contracts).set({ status: input.status }).where(eq(contracts.id, input.contractId));
+        return { success: true };
+      }),
+
+    deleteContract: protectedProcedure
+      .input(z.object({ contractId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(contracts).where(eq(contracts.id, input.contractId));
+        return { success: true };
+      }),
+
+    createDocument: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string(),
+        type: z.enum(["contract", "sow", "nda", "technical", "report", "other"]).default("other"),
+        fileUrl: z.string().url().optional(),
+        category: z.string().default("general"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(documents).values({
+          userId: input.userId,
+          name: input.name,
+          type: input.type,
+          fileUrl: input.fileUrl ?? "https://dyneros.com/placeholder",
+          category: input.category,
+          uploadedBy: ctx.user.id,
+          status: "draft",
+        });
+        return { success: true };
+      }),
+
+    deleteDocument: protectedProcedure
+      .input(z.object({ documentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(documents).where(eq(documents.id, input.documentId));
+        return { success: true };
+      }),
+
+    addWalletForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string(),
+        address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Indirizzo non valido"),
+        network: z.string().default("DYNEROS Chain"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(wallets).values({ userId: input.userId, name: input.name, address: input.address, network: input.network });
+        return { success: true };
+      }),
+
+    deleteWallet: protectedProcedure
+      .input(z.object({ walletId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(wallets).where(eq(wallets.id, input.walletId));
+        return { success: true };
+      }),
+
+    addSmartContractForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string(),
+        address: z.string(),
+        network: z.string().default("DYNEROS Chain"),
+        type: z.string().optional(),
+        abi: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(smartContracts).values({
+          userId: input.userId,
+          name: input.name,
+          address: input.address,
+          network: input.network,
+          abi: input.abi ?? null,
+          status: "active",
+        });
+        return { success: true };
+      }),
+
+    deleteSmartContract: protectedProcedure
+      .input(z.object({ contractId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(smartContracts).where(eq(smartContracts.id, input.contractId));
+        return { success: true };
+      }),
+
+    addDomainForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        domainName: z.string(),
+        registrar: z.string().optional(),
+        expiryDate: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(domains).values({
+          userId: input.userId,
+          domainName: input.domainName,
+          registrar: input.registrar ?? null,
+          expiryDate: input.expiryDate ? new Date(input.expiryDate) : null,
+          status: "active",
+        });
+        return { success: true };
+      }),
+
+    deleteDomain: protectedProcedure
+      .input(z.object({ domainId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(domains).where(eq(domains.id, input.domainId));
+        return { success: true };
+      }),
+
+    addAiProjectForUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(aiProjects).values({
+          userId: input.userId,
+          name: input.name,
+          status: "active",
+          environment: "dev",
+        });
+        return { success: true };
+      }),
+
+    deleteAiProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(aiProjects).where(eq(aiProjects.id, input.projectId));
+        return { success: true };
+      }),
+
+    revokeApiKeyAdmin: protectedProcedure
+      .input(z.object({ keyId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.update(apiKeys).set({ revokedAt: new Date() }).where(eq(apiKeys.id, input.keyId));
+        return { success: true };
+      }),
+
+    deleteAffiliate: protectedProcedure
+      .input(z.object({ affiliateId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.delete(affiliateProfiles).where(eq(affiliateProfiles.id, input.affiliateId));
+        return { success: true };
+      }),
+
+    createUser: protectedProcedure
+      .input(z.object({
+        name: z.string().min(2),
+        email: z.string().email(),
+        password: z.string().min(8),
+        role: z.enum(["user", "admin", "superadmin"]).default("user"),
+        company: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, input.email)).limit(1);
+        if (existing.length > 0) throw new Error("Email già registrata");
+        const passwordHash = await hashPassword(input.password);
+        const openId = `admin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        await db.insert(users).values({
+          name: input.name,
+          email: input.email,
+          passwordHash,
+          role: input.role,
+          company: input.company ?? null,
+          loginMethod: "email",
+          status: "active",
+          emailVerified: true,
+          openId,
+          lastSignedIn: new Date(),
+        });
+        return { success: true };
+      }),
+
+    sendNotificationToUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        title: z.string(),
+        message: z.string(),
+        type: z.enum(["ticket_update", "invoice", "milestone", "deployment", "alert", "system"]).default("system"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin" && ctx.user.role !== "admin") throw new Error("Non autorizzato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        await db.insert(notifications).values({
+          userId: input.userId,
+          type: input.type,
+          title: input.title,
+          message: input.message,
+          read: false,
+        });
+        return { success: true };
       }),
 
     blockchainStats: protectedProcedure.query(async ({ ctx }) => {

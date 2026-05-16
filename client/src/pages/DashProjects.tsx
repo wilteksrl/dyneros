@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Loader2,
   Plus,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -97,7 +98,11 @@ function ProjectDetail({ id, onClose, statusLabels, priorityLabels, typeLabels, 
   statusLabels: Record<string, string>; priorityLabels: Record<string, string>; typeLabels: Record<string, string>;
   t: (k: string) => string;
 }) {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.dashboard.projects.useQuery();
+  const deleteMutation = trpc.superadmin.deleteProject.useMutation({
+    onSuccess: () => { utils.dashboard.projects.invalidate(); onClose(); },
+  });
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
       <Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} />
@@ -126,9 +131,19 @@ function ProjectDetail({ id, onClose, statusLabels, priorityLabels, typeLabels, 
           <h2 className="text-lg font-semibold">{project.name}</h2>
           <p className="text-sm text-muted-foreground">{typeLabels[project.type] || project.type} · {project.environment}</p>
         </div>
-        <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {(project.status === "planning" || project.status === "on_hold") && (
+            <button
+              onClick={() => { if (window.confirm("Eliminare questo progetto?")) deleteMutation.mutate({ projectId: project.id }); }}
+              className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-red-900/30 transition-colors text-red-400"
+              title="Elimina progetto">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[oklch(15%_0.008_264)] transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div>
@@ -175,15 +190,16 @@ export default function DashProjects() {
   const [filter, setFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", type: "web_app", description: "", priority: "medium" as "low"|"medium"|"high", eta: "" });
+  const [createForm, setCreateForm] = useState({ name: "", type: "web_app", description: "", priority: "medium" as "low"|"medium"|"high", eta: "", environment: "production" });
   const createMutation = trpc.dashboard.createProject.useMutation({
     onSuccess: () => {
       utils.dashboard.projects.invalidate();
       setCreateSuccess(true);
-      setCreateForm({ name: "", type: "web_app", description: "", priority: "medium", eta: "" });
+      setCreateForm({ name: "", type: "web_app", description: "", priority: "medium", eta: "", environment: "production" });
       setTimeout(() => { setShowCreate(false); setCreateSuccess(false); }, 2500);
     },
   });
+
 
   const statusLabels: Record<string, string> = {
     in_progress: t("status.in_progress"), completed: t("status.completed"),
@@ -292,6 +308,16 @@ export default function DashProjects() {
                         style={{ borderColor: BORDER }} placeholder="Descrivi il progetto..." />
                     </div>
                     <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Ambiente</label>
+                      <select value={createForm.environment} onChange={e => setCreateForm(f => ({ ...f, environment: e.target.value }))}
+                        className="w-full rounded-lg px-3 h-9 text-sm border outline-none"
+                        style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER }}>
+                        <option value="dev">Development</option>
+                        <option value="staging">Staging</option>
+                        <option value="production">Production</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Data stimata consegna</label>
                       <input type="date" value={createForm.eta} onChange={e => setCreateForm(f => ({ ...f, eta: e.target.value }))}
                         className="w-full rounded-lg px-3 h-9 text-sm border outline-none"
@@ -303,7 +329,7 @@ export default function DashProjects() {
                       className="px-4 h-9 rounded-lg text-sm border" style={{ borderColor: BORDER }}>Annulla</button>
                     <button
                       disabled={createMutation.isPending || !createForm.name.trim()}
-                      onClick={() => createMutation.mutate({ name: createForm.name, type: createForm.type as "blockchain_infrastructure"|"smart_contract"|"web_app"|"ai_system"|"other", description: createForm.description || undefined, priority: createForm.priority, eta: createForm.eta || undefined, environment: "production" })}
+                      onClick={() => createMutation.mutate({ name: createForm.name, type: createForm.type as "blockchain_infrastructure"|"smart_contract"|"web_app"|"ai_system"|"other", description: createForm.description || undefined, priority: createForm.priority, eta: createForm.eta || undefined, environment: createForm.environment as "dev"|"staging"|"production"|"development" })}
                       className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium disabled:opacity-50"
                       style={{ background: GOLD, color: "#000" }}>
                       {createMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

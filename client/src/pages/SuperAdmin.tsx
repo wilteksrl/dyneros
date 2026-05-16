@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import {
   Activity, AlertTriangle, BarChart2, Box, ChevronLeft, ChevronRight,
   CircuitBoard, Database, FileText, Globe, Key, Layers, Loader2,
-  LogOut, Mail, Menu, Receipt, Server, Settings, Shield, Ticket,
-  TrendingUp, Users, Wallet, X, Zap, FolderOpen, Bot, Bell, Link2
+  LogOut, Mail, Menu, Plus, Receipt, Server, Settings, Shield, Ticket,
+  Trash2, TrendingUp, Users, Wallet, X, Zap, FolderOpen, Bot, Bell, Link2
 } from "lucide-react";
 
 const GOLD = "oklch(68% 0.19 72)";
@@ -253,45 +253,96 @@ function SectionUsers() {
 function SectionAllProjects() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allProjects.useQuery();
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
   const updateStatus = trpc.superadmin.updateProjectStatus.useMutation({ onSuccess: () => { toast.success("Stato aggiornato"); utils.superadmin.allProjects.invalidate(); } });
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={FolderOpen} text="Nessun progetto presente" />;
+  const createProj = trpc.superadmin.createProjectForUser.useMutation({ onSuccess: () => { toast.success("Progetto creato"); utils.superadmin.allProjects.invalidate(); setShowCreate(false); setForm({ userId: "", name: "", type: "web_app", priority: "medium", environment: "production" }); } });
+  const deleteProj = trpc.superadmin.adminDeleteProject.useMutation({ onSuccess: () => { toast.success("Progetto eliminato"); utils.superadmin.allProjects.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", name: "", type: "web_app", priority: "medium", environment: "production" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Progetto</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Priorità</th>
-            <th className="text-left px-4 py-2.5 font-medium">Creato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Cambia Stato</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.project.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium max-w-[140px] truncate">{row.project.name}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5"><Badge label={row.project.status} color={row.project.status === "in_progress" ? GOLD : row.project.status === "completed" ? "oklch(60% 0.18 145)" : "oklch(55% 0.05 264)"} /></td>
-              <td className="px-4 py-2.5"><Badge label={row.project.priority} color={row.project.priority === "high" ? "oklch(55% 0.22 25)" : row.project.priority === "medium" ? GOLD : "oklch(55% 0.05 264)"} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.project.createdAt).toLocaleDateString("it-IT")}</td>
-              <td className="px-4 py-2.5">
-                <select value={row.project.status}
-                  onChange={e => updateStatus.mutate({ projectId: row.project.id, status: e.target.value as "planning"|"in_progress"|"completed"|"on_hold" })}
-                  className="text-[10px] px-2 py-1 rounded border outline-none"
-                  style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "oklch(70% 0.05 264)" }}>
-                  <option value="planning">Planning</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completato</option>
-                  <option value="on_hold">On Hold</option>
-                </select>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}>
+          <Plus className="h-3.5 w-3.5" /> Nuovo Progetto
+        </button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>
+                {usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Nome progetto" />
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Tipo</label>
+              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="web_app">Web App</option>
+                <option value="blockchain_infrastructure">Blockchain</option>
+                <option value="smart_contract">Smart Contract</option>
+                <option value="ai_system">AI/ML</option>
+                <option value="other">Altro</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Ambiente</label>
+              <select value={form.environment} onChange={e => setForm(f => ({ ...f, environment: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="dev">Development</option>
+                <option value="staging">Staging</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={createProj.isPending || !form.userId || !form.name.trim()} onClick={() => createProj.mutate({ userId: parseInt(form.userId), name: form.name, type: form.type as "web_app"|"blockchain_infrastructure"|"smart_contract"|"ai_system"|"other", priority: form.priority as "low"|"medium"|"high", environment: form.environment })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Crea</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={FolderOpen} text="Nessun progetto presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+                <th className="text-left px-4 py-2.5 font-medium">Progetto</th>
+                <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+                <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+                <th className="text-left px-4 py-2.5 font-medium">Priorità</th>
+                <th className="text-left px-4 py-2.5 font-medium">Creato</th>
+                <th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map(row => (
+                <tr key={row.project.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                  <td className="px-4 py-2.5 font-medium max-w-[140px] truncate">{row.project.name}</td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                  <td className="px-4 py-2.5"><Badge label={row.project.status} color={row.project.status === "in_progress" ? GOLD : row.project.status === "completed" ? "oklch(60% 0.18 145)" : "oklch(55% 0.05 264)"} /></td>
+                  <td className="px-4 py-2.5"><Badge label={row.project.priority} color={row.project.priority === "high" ? "oklch(55% 0.22 25)" : row.project.priority === "medium" ? GOLD : "oklch(55% 0.05 264)"} /></td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.project.createdAt).toLocaleDateString("it-IT")}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-1">
+                      <select value={row.project.status} onChange={e => updateStatus.mutate({ projectId: row.project.id, status: e.target.value as "planning"|"in_progress"|"completed"|"on_hold" })} className="text-[10px] px-2 py-1 rounded border outline-none" style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "oklch(70% 0.05 264)" }}>
+                        <option value="planning">Planning</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completato</option>
+                        <option value="on_hold">On Hold</option>
+                      </select>
+                      <button onClick={() => { if (confirm("Eliminare?")) deleteProj.mutate({ projectId: row.project.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -352,97 +403,200 @@ function SectionAllTickets() {
 }
 
 function SectionAllInvoices() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allInvoices.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Receipt} text="Nessuna fattura presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const createInv = trpc.superadmin.createInvoice.useMutation({ onSuccess: () => { toast.success("Fattura creata"); utils.superadmin.allInvoices.invalidate(); setShowCreate(false); setForm({ userId: "", amount: "", description: "", due: "" }); } });
+  const updateInvStatus = trpc.superadmin.updateInvoiceStatus.useMutation({ onSuccess: () => { toast.success("Stato aggiornato"); utils.superadmin.allInvoices.invalidate(); } });
+  const deleteInv = trpc.superadmin.deleteInvoice.useMutation({ onSuccess: () => { toast.success("Fattura eliminata"); utils.superadmin.allInvoices.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", amount: "", description: "", due: "" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Numero</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-right px-4 py-2.5 font-medium">Importo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Scadenza</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.invoice.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-mono text-xs">{row.invoice.invoiceNumber}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5 text-right font-semibold" style={{ color: GOLD }}>€{parseFloat(row.invoice.amount).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
-              <td className="px-4 py-2.5"><Badge label={row.invoice.status} color={row.invoice.status === "paid" ? "oklch(60% 0.18 145)" : row.invoice.status === "overdue" ? "oklch(55% 0.22 25)" : GOLD} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.invoice.due).toLocaleDateString("it-IT")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}>
+          <Plus className="h-3.5 w-3.5" /> Nuova Fattura
+        </button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>
+                {usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Importo (€) *</label>
+              <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Descrizione *</label>
+              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Descrizione servizio" />
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground mb-1 block">Scadenza *</label>
+              <input type="date" value={form.due} onChange={e => setForm(f => ({ ...f, due: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={createInv.isPending || !form.userId || !form.amount || !form.description || !form.due} onClick={() => createInv.mutate({ userId: Number(form.userId), amount: parseFloat(form.amount), description: form.description, dueDate: form.due })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Crea</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Receipt} text="Nessuna fattura presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+                <th className="text-left px-4 py-2.5 font-medium">Numero</th>
+                <th className="text-left px-4 py-2.5 font-medium">Utente</th>
+                <th className="text-right px-4 py-2.5 font-medium">Importo</th>
+                <th className="text-left px-4 py-2.5 font-medium">Stato</th>
+                <th className="text-left px-4 py-2.5 font-medium">Scadenza</th>
+                <th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map(row => (
+                <tr key={row.invoice.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                  <td className="px-4 py-2.5 font-mono text-xs">{row.invoice.invoiceNumber}</td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold" style={{ color: GOLD }}>€{parseFloat(row.invoice.amount).toLocaleString("it-IT", { minimumFractionDigits: 2 })}</td>
+                  <td className="px-4 py-2.5">
+                    <select value={row.invoice.status} onChange={e => updateInvStatus.mutate({ invoiceId: row.invoice.id, status: e.target.value as "paid"|"unpaid"|"overdue" })} className="text-[10px] px-2 py-1 rounded border outline-none" style={{ background: "oklch(12% 0.006 264)", borderColor: BORDER, color: "oklch(70% 0.05 264)" }}>
+                      <option value="unpaid">Non pagata</option>
+                      <option value="paid">Pagata</option>
+                      <option value="overdue">Scaduta</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.invoice.due).toLocaleDateString("it-IT")}</td>
+                  <td className="px-4 py-2.5">
+                    <button onClick={() => { if (confirm("Eliminare?")) deleteInv.mutate({ invoiceId: row.invoice.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function SectionAllContracts() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allContracts.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={FileText} text="Nessun contratto presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const createC = trpc.superadmin.createContract.useMutation({ onSuccess: () => { toast.success("Contratto creato"); utils.superadmin.allContracts.invalidate(); setShowCreate(false); setForm({ userId: "", contractName: "", type: "Other", endDate: "" }); } });
+  const deleteC = trpc.superadmin.deleteContract.useMutation({ onSuccess: () => { toast.success("Contratto eliminato"); utils.superadmin.allContracts.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", contractName: "", type: "Other", endDate: "" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Contratto</th>
-            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Scadenza</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.contract.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium">{row.contract.contractName}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.contract.type}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5"><Badge label={row.contract.status} color={row.contract.status === "active" ? "oklch(60% 0.18 145)" : row.contract.status === "expired" ? "oklch(55% 0.22 25)" : GOLD} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.contract.endDate ? new Date(row.contract.endDate).toLocaleDateString("it-IT") : "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}><Plus className="h-3.5 w-3.5" /> Nuovo Contratto</button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>{usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={form.contractName} onChange={e => setForm(f => ({ ...f, contractName: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Nome contratto" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Tipo</label>
+              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="NDA">NDA</option><option value="Service Agreement">Service Agreement</option><option value="Statement of Work">Statement of Work</option><option value="Other">Altro</option>
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Scadenza</label>
+              <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={createC.isPending || !form.userId || !form.contractName} onClick={() => createC.mutate({ userId: Number(form.userId), contractName: form.contractName, type: form.type as "NDA"|"Service Agreement"|"Statement of Work"|"Other", endDate: form.endDate || undefined })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Crea</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={FileText} text="Nessun contratto presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Contratto</th><th className="text-left px-4 py-2.5 font-medium">Tipo</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Stato</th><th className="text-left px-4 py-2.5 font-medium">Scadenza</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.contract.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-medium">{row.contract.contractName}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.contract.type}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5"><Badge label={row.contract.status} color={row.contract.status === "active" ? "oklch(60% 0.18 145)" : row.contract.status === "expired" ? "oklch(55% 0.22 25)" : GOLD} /></td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.contract.endDate ? new Date(row.contract.endDate).toLocaleDateString("it-IT") : "—"}</td>
+                <td className="px-4 py-2.5"><button onClick={() => { if (confirm("Eliminare?")) deleteC.mutate({ contractId: row.contract.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function SectionAllDocuments() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allDocuments.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Layers} text="Nessun documento presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const createDoc = trpc.superadmin.createDocument.useMutation({ onSuccess: () => { toast.success("Documento creato"); utils.superadmin.allDocuments.invalidate(); setShowCreate(false); setForm({ userId: "", name: "", type: "other" }); } });
+  const deleteDoc = trpc.superadmin.deleteDocument.useMutation({ onSuccess: () => { toast.success("Documento eliminato"); utils.superadmin.allDocuments.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", name: "", type: "other" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
-            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Caricato</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.document.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium">{row.document.name}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.document.type ?? "—"}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5"><Badge label={row.document.status} color={row.document.status === "final" ? "oklch(60% 0.18 145)" : GOLD} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.document.createdAt).toLocaleDateString("it-IT")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}><Plus className="h-3.5 w-3.5" /> Nuovo Documento</button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>{usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Nome documento" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Tipo</label>
+              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="contract">Contratto</option><option value="sow">SOW</option><option value="nda">NDA</option><option value="technical">Tecnico</option><option value="report">Report</option><option value="other">Altro</option>
+              </select></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={createDoc.isPending || !form.userId || !form.name} onClick={() => createDoc.mutate({ userId: Number(form.userId), name: form.name, type: form.type as "contract"|"sow"|"nda"|"technical"|"report"|"other" })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Crea</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Layers} text="Nessun documento presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Nome</th><th className="text-left px-4 py-2.5 font-medium">Tipo</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Stato</th><th className="text-left px-4 py-2.5 font-medium">Caricato</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.document.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-medium">{row.document.name}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.document.type ?? "—"}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5"><Badge label={row.document.status} color={row.document.status === "final" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.document.createdAt).toLocaleDateString("it-IT")}</td>
+                <td className="px-4 py-2.5"><button onClick={() => { if (confirm("Eliminare?")) deleteDoc.mutate({ documentId: row.document.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -655,153 +809,246 @@ function SectionSystem() {
 }
 
 function SectionAllWallets() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allWallets.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Wallet} text="Nessun wallet presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const addW = trpc.superadmin.addWalletForUser.useMutation({ onSuccess: () => { toast.success("Wallet aggiunto"); utils.superadmin.allWallets.invalidate(); setShowCreate(false); setForm({ userId: "", name: "", address: "", network: "DYNEROS Chain" }); } });
+  const deleteW = trpc.superadmin.deleteWallet.useMutation({ onSuccess: () => { toast.success("Wallet eliminato"); utils.superadmin.allWallets.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", name: "", address: "", network: "DYNEROS Chain" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Indirizzo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-left px-4 py-2.5 font-medium">Creato</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.wallet.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.wallet.address}</td>
-              <td className="px-4 py-2.5 text-xs">{row.wallet.network}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.wallet.createdAt).toLocaleDateString("it-IT")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}><Plus className="h-3.5 w-3.5" /> Aggiungi Wallet</button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>{usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Es. Main Wallet" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Indirizzo (0x...) *</label>
+              <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none font-mono" style={{ borderColor: BORDER }} placeholder="0x..." /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Network</label>
+              <input value={form.network} onChange={e => setForm(f => ({ ...f, network: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={addW.isPending || !form.userId || !form.name || !form.address} onClick={() => addW.mutate({ userId: Number(form.userId), name: form.name, address: form.address, network: form.network })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Aggiungi</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Wallet} text="Nessun wallet presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Indirizzo</th><th className="text-left px-4 py-2.5 font-medium">Network</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Creato</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.wallet.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.wallet.address}</td>
+                <td className="px-4 py-2.5 text-xs">{row.wallet.network}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.wallet.createdAt).toLocaleDateString("it-IT")}</td>
+                <td className="px-4 py-2.5"><button onClick={() => { if (confirm("Eliminare?")) deleteW.mutate({ walletId: row.wallet.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function SectionAllSmartContracts() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allSmartContracts.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Box} text="Nessun smart contract presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const addSC = trpc.superadmin.addSmartContractForUser.useMutation({ onSuccess: () => { toast.success("Smart contract aggiunto"); utils.superadmin.allSmartContracts.invalidate(); setShowCreate(false); setForm({ userId: "", name: "", address: "", network: "DYNEROS Chain" }); } });
+  const deleteSC = trpc.superadmin.deleteSmartContract.useMutation({ onSuccess: () => { toast.success("Smart contract eliminato"); utils.superadmin.allSmartContracts.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", name: "", address: "", network: "DYNEROS Chain" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
-            <th className="text-left px-4 py-2.5 font-medium">Indirizzo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.sc.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium">{row.sc.name}</td>
-              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.sc.address}</td>
-              <td className="px-4 py-2.5"><Badge label={row.sc.status} color={row.sc.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}><Plus className="h-3.5 w-3.5" /> Nuovo Smart Contract</button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>{usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Nome contratto" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Indirizzo (0x...) *</label>
+              <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none font-mono" style={{ borderColor: BORDER }} placeholder="0x..." /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Network</label>
+              <input value={form.network} onChange={e => setForm(f => ({ ...f, network: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={addSC.isPending || !form.userId || !form.name || !form.address} onClick={() => addSC.mutate({ userId: Number(form.userId), name: form.name, address: form.address, network: form.network })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Aggiungi</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Box} text="Nessun smart contract presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Nome</th><th className="text-left px-4 py-2.5 font-medium">Indirizzo</th><th className="text-left px-4 py-2.5 font-medium">Stato</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.sc.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-medium">{row.sc.name}</td>
+                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.sc.address}</td>
+                <td className="px-4 py-2.5"><Badge label={row.sc.status} color={row.sc.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5"><button onClick={() => { if (confirm("Eliminare?")) deleteSC.mutate({ contractId: row.sc.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function SectionAllDomains() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allDomains.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Globe} text="Nessun dominio presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const addD = trpc.superadmin.addDomainForUser.useMutation({ onSuccess: () => { toast.success("Dominio aggiunto"); utils.superadmin.allDomains.invalidate(); setShowCreate(false); setForm({ userId: "", domainName: "", registrar: "" }); } });
+  const deleteD = trpc.superadmin.deleteDomain.useMutation({ onSuccess: () => { toast.success("Dominio eliminato"); utils.superadmin.allDomains.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", domainName: "", registrar: "" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Dominio</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">SSL</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.domain.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-mono text-xs">{row.domain.domainName}</td>
-              <td className="px-4 py-2.5"><Badge label={row.domain.status} color={row.domain.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
-              <td className="px-4 py-2.5"><Badge label={row.domain.sslStatus} color={row.domain.sslStatus === "valid" ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}><Plus className="h-3.5 w-3.5" /> Aggiungi Dominio</button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>{usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Dominio *</label>
+              <input value={form.domainName} onChange={e => setForm(f => ({ ...f, domainName: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="es. example.com" /></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Registrar</label>
+              <input value={form.registrar} onChange={e => setForm(f => ({ ...f, registrar: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="es. GoDaddy" /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={addD.isPending || !form.userId || !form.domainName} onClick={() => addD.mutate({ userId: Number(form.userId), domainName: form.domainName, registrar: form.registrar || undefined })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Aggiungi</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Globe} text="Nessun dominio presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Dominio</th><th className="text-left px-4 py-2.5 font-medium">Stato</th><th className="text-left px-4 py-2.5 font-medium">SSL</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.domain.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-mono text-xs">{row.domain.domainName}</td>
+                <td className="px-4 py-2.5"><Badge label={row.domain.status} color={row.domain.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+                <td className="px-4 py-2.5"><Badge label={row.domain.sslStatus} color={row.domain.sslStatus === "valid" ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5"><button onClick={() => { if (confirm("Eliminare?")) deleteD.mutate({ domainId: row.domain.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function SectionAllAI() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allAiProjects.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Bot} text="Nessun progetto AI presente" />;
+  const { data: usersList } = trpc.superadmin.listUsers.useQuery();
+  const addAI = trpc.superadmin.addAiProjectForUser.useMutation({ onSuccess: () => { toast.success("Progetto AI aggiunto"); utils.superadmin.allAiProjects.invalidate(); setShowCreate(false); setForm({ userId: "", name: "", description: "" }); } });
+  const deleteAI = trpc.superadmin.deleteAiProject.useMutation({ onSuccess: () => { toast.success("Progetto AI eliminato"); utils.superadmin.allAiProjects.invalidate(); } });
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ userId: "", name: "", description: "" });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
-            <th className="text-left px-4 py-2.5 font-medium">Tipo</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.ai.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium">{row.ai.name}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.ai.environment}</td>
-              <td className="px-4 py-2.5"><Badge label={row.ai.status} color={row.ai.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium" style={{ background: GOLD, color: "#000" }}><Plus className="h-3.5 w-3.5" /> Nuovo Progetto AI</button>
+      </div>
+      {showCreate && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ background: CARD_BG, borderColor: BORDER }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Utente *</label>
+              <select value={form.userId} onChange={e => setForm(f => ({ ...f, userId: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-[oklch(12%_0.006_264)] outline-none" style={{ borderColor: BORDER }}>
+                <option value="">Seleziona utente</option>{usersList?.map(u => <option key={u.id} value={u.id}>{u.name ?? u.email}</option>)}
+              </select></div>
+            <div><label className="text-[10px] text-muted-foreground mb-1 block">Nome *</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Nome progetto AI" /></div>
+            <div className="col-span-2"><label className="text-[10px] text-muted-foreground mb-1 block">Descrizione</label>
+              <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full h-8 px-2 rounded border text-xs bg-transparent outline-none" style={{ borderColor: BORDER }} placeholder="Descrizione opzionale" /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 h-8 rounded-lg text-xs border" style={{ borderColor: BORDER }}>Annulla</button>
+            <button disabled={addAI.isPending || !form.userId || !form.name} onClick={() => addAI.mutate({ userId: Number(form.userId), name: form.name, description: form.description || undefined })} className="px-3 h-8 rounded-lg text-xs font-medium disabled:opacity-50" style={{ background: GOLD, color: "#000" }}>Crea</button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Bot} text="Nessun progetto AI presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Nome</th><th className="text-left px-4 py-2.5 font-medium">Tipo</th><th className="text-left px-4 py-2.5 font-medium">Stato</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.ai.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-medium">{row.ai.name}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.ai.environment}</td>
+                <td className="px-4 py-2.5"><Badge label={row.ai.status} color={row.ai.status === "active" ? "oklch(60% 0.18 145)" : GOLD} /></td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5"><button onClick={() => { if (confirm("Eliminare?")) deleteAI.mutate({ projectId: row.ai.id }); }} className="h-7 w-7 flex items-center justify-center rounded hover:bg-red-900/30 text-red-400"><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function SectionAllApiKeys() {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.superadmin.allApiKeys.useQuery();
-  if (isLoading) return <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div>;
-  if (!data || data.length === 0) return <EmptyState icon={Key} text="Nessuna API key presente" />;
+  const revokeKey = trpc.superadmin.revokeApiKeyAdmin.useMutation({ onSuccess: () => { toast.success("API key revocata"); utils.superadmin.allApiKeys.invalidate(); } });
   return (
-    <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
-            <th className="text-left px-4 py-2.5 font-medium">Nome</th>
-            <th className="text-left px-4 py-2.5 font-medium">Prefisso</th>
-            <th className="text-left px-4 py-2.5 font-medium">Stato</th>
-            <th className="text-left px-4 py-2.5 font-medium">Utente</th>
-            <th className="text-left px-4 py-2.5 font-medium">Creata</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.key.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
-              <td className="px-4 py-2.5 font-medium">{row.key.name}</td>
-              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.key.keyPrefix}…</td>
-              <td className="px-4 py-2.5"><Badge label={row.key.revokedAt ? "revocata" : "attiva"} color={!row.key.revokedAt ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.key.createdAt).toLocaleDateString("it-IT")}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      {isLoading ? <div className="flex items-center justify-center h-40"><Loader2 className="h-5 w-5 animate-spin" style={{ color: GOLD }} /></div> : !data || data.length === 0 ? <EmptyState icon={Key} text="Nessuna API key presente" /> : (
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-xs text-muted-foreground" style={{ background: "oklch(9% 0.005 264)", borderColor: BORDER }}>
+              <th className="text-left px-4 py-2.5 font-medium">Nome</th><th className="text-left px-4 py-2.5 font-medium">Prefisso</th><th className="text-left px-4 py-2.5 font-medium">Stato</th><th className="text-left px-4 py-2.5 font-medium">Utente</th><th className="text-left px-4 py-2.5 font-medium">Creata</th><th className="text-left px-4 py-2.5 font-medium">Azioni</th>
+            </tr></thead>
+            <tbody>{data.map(row => (
+              <tr key={row.key.id} className="border-b last:border-0 hover:bg-[oklch(12%_0.006_264)] transition-colors" style={{ borderColor: BORDER }}>
+                <td className="px-4 py-2.5 font-medium">{row.key.name}</td>
+                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.key.keyPrefix}…</td>
+                <td className="px-4 py-2.5"><Badge label={row.key.revokedAt ? "revocata" : "attiva"} color={!row.key.revokedAt ? "oklch(60% 0.18 145)" : "oklch(55% 0.22 25)"} /></td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.userName ?? row.userEmail ?? "—"}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{new Date(row.key.createdAt).toLocaleDateString("it-IT")}</td>
+                <td className="px-4 py-2.5">{!row.key.revokedAt && <button onClick={() => { if (confirm("Revocare questa API key?")) revokeKey.mutate({ keyId: row.key.id }); }} className="text-[10px] px-2 py-1 rounded border" style={{ borderColor: "oklch(55% 0.22 25)40", color: "oklch(55% 0.22 25)" }}>Revoca</button>}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
