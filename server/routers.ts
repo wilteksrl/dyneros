@@ -282,7 +282,7 @@ export const appRouter = router({
         description: z.string().optional(),
         type: z.enum(["blockchain_infrastructure", "smart_contract", "web_app", "ai_system", "other"]),
         priority: z.enum(["low", "medium", "high"]),
-        environment: z.enum(["dev", "staging", "production"]),
+        environment: z.enum(["dev", "staging", "production"]).or(z.literal("development")),
         eta: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -294,7 +294,7 @@ export const appRouter = router({
           description: input.description ?? null,
           type: input.type,
           priority: input.priority,
-          environment: input.environment,
+          environment: (input.environment === "development" ? "dev" : input.environment) as "dev" | "staging" | "production",
           status: "planning",
           progress: 0,
           startDate: new Date(),

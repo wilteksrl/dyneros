@@ -129,3 +129,30 @@ Nessun `db:push` necessario — schema invariato.
 
 ---
 *IT Team Alfassa*
+
+---
+
+# CHANGES — Fix CRUD v6 (16 Maggio 2026)
+
+## File modificati: 1
+
+### `server/routers.ts`
+- `createProject`: accetta ora `"development"` come valore valido per `environment` (alias di `"dev"`)
+- Mapping automatico `"development"` → `"dev"` prima dell'insert nel DB (schema enum invariato)
+
+### Stato CRUD verificato (nessuna modifica necessaria ai file client)
+- `walletInfo` restituisce già `id` per ogni wallet ✅
+- `domains` restituisce già `id` per ogni dominio ✅
+- `DashProjects.tsx`: modal "Nuovo Progetto" già presente ✅
+- `DashWallet.tsx`: modal "Aggiungi Wallet" + pulsante rimozione già presenti ✅
+- `DashDomains.tsx`: modal "Aggiungi Dominio" + pulsante rimozione già presenti ✅
+
+## Comandi deploy
+```bash
+npm run build
+pm2 restart dyneros
+```
+Nessun `db:push` necessario — schema invariato.
+
+---
+*IT Team Alfassa*
