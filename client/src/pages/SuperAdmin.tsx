@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
   Activity, AlertTriangle, BarChart2, Box, ChevronLeft, ChevronRight,
-  CircuitBoard, Database, FileText, Globe, Key, Layers, Loader2,
+  CircuitBoard, CreditCard, Database, FileText, Globe, Key, Layers, Loader2,
   LogOut, Mail, Menu, Plus, Receipt, Server, Settings, Shield, Ticket,
   Trash2, TrendingUp, Users, Wallet, X, Zap, FolderOpen, Bot, Bell, Link2
 } from "lucide-react";
@@ -17,7 +17,7 @@ const SIDEBAR_BG = "oklch(8% 0.005 264)";
 
 type Section =
   | "overview" | "users" | "projects" | "tickets" | "invoices" | "contracts"
-  | "documents" | "affiliates" | "email" | "system"
+  | "documents" | "affiliates" | "email" | "system" | "payments"
   | "blockchain" | "wallets" | "smart-contracts"
   | "domains" | "ai"
   | "notifications" | "settings" | "security" | "api-keys" | "email-settings";
@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "affiliates", label: "Affiliati", icon: Link2, group: "GESTIONE PIATTAFORMA" },
   { id: "email", label: "Email", icon: Mail, group: "GESTIONE PIATTAFORMA" },
   { id: "system", label: "Sistema", icon: Server, group: "GESTIONE PIATTAFORMA" },
+  { id: "payments", label: "Pagamenti", icon: CreditCard, group: "GESTIONE PIATTAFORMA" },
   { id: "blockchain", label: "Blockchain / Web3", icon: CircuitBoard, group: "BLOCKCHAIN GLOBALE" },
   { id: "wallets", label: "Wallet & Assets", icon: Wallet, group: "BLOCKCHAIN GLOBALE" },
   { id: "smart-contracts", label: "Smart Contracts", icon: Box, group: "BLOCKCHAIN GLOBALE" },
@@ -1153,6 +1154,145 @@ function SectionPlaceholder({ icon: Icon, title }: { icon: React.ElementType; ti
   return <EmptyState icon={Icon} text={`${title} — Nessun dato disponibile`} />;
 }
 
+function SectionPayments() {
+  const [tab, setTab] = useState<"stripe" | "paypal" | "bank_transfer">("stripe");
+  const { data: settings, refetch } = trpc.superadmin.getPaymentSettings.useQuery();
+  const saveMut = trpc.superadmin.savePaymentSettings.useMutation({ onSuccess: () => { toast.success("Impostazioni salvate"); refetch(); } });
+
+  const get = (provider: "stripe" | "paypal" | "bank_transfer") =>
+    settings?.find((s: { provider: string }) => s.provider === provider);
+
+  const StripeForm = () => {
+    const s = get("stripe");
+    const [form, setForm] = useState({ enabled: s?.enabled ?? false, publicKey: s?.publicKey ?? "", secretKey: s?.secretKey ?? "", webhookSecret: s?.webhookSecret ?? "" });
+    return (
+      <div className="space-y-4 max-w-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.enabled} onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))} className="h-4 w-4 accent-amber-500" />
+            <span className="text-sm font-medium">Abilita Stripe</span>
+          </label>
+        </div>
+        {[{ label: "Publishable Key (pk_...)", key: "publicKey" as const, placeholder: "pk_live_..." },
+          { label: "Secret Key (sk_...)", key: "secretKey" as const, placeholder: "sk_live_..." },
+          { label: "Webhook Secret (whsec_...)", key: "webhookSecret" as const, placeholder: "whsec_..." }].map(({ label, key, placeholder }) => (
+          <div key={key}>
+            <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+            <input type="password" value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+              placeholder={placeholder}
+              className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm font-mono focus:outline-none focus:ring-1"
+              style={{ borderColor: BORDER }} />
+          </div>
+        ))}
+        <button disabled={saveMut.isPending} onClick={() => saveMut.mutate({ provider: "stripe", enabled: form.enabled, publicKey: form.publicKey, secretKey: form.secretKey, webhookSecret: form.webhookSecret })}
+          className="h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-50"
+          style={{ background: GOLD, color: "#000" }}>
+          {saveMut.isPending ? "Salvataggio..." : "Salva Stripe"}
+        </button>
+      </div>
+    );
+  };
+
+  const PayPalForm = () => {
+    const s = get("paypal");
+    const [form, setForm] = useState({ enabled: s?.enabled ?? false, clientId: s?.clientId ?? "", clientSecret: s?.clientSecret ?? "" });
+    return (
+      <div className="space-y-4 max-w-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.enabled} onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))} className="h-4 w-4 accent-amber-500" />
+            <span className="text-sm font-medium">Abilita PayPal</span>
+          </label>
+        </div>
+        {[{ label: "Client ID", key: "clientId" as const, placeholder: "AaBb..." },
+          { label: "Client Secret", key: "clientSecret" as const, placeholder: "EcFg..." }].map(({ label, key, placeholder }) => (
+          <div key={key}>
+            <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+            <input type="password" value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+              placeholder={placeholder}
+              className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm font-mono focus:outline-none focus:ring-1"
+              style={{ borderColor: BORDER }} />
+          </div>
+        ))}
+        <button disabled={saveMut.isPending} onClick={() => saveMut.mutate({ provider: "paypal", enabled: form.enabled, clientId: form.clientId, clientSecret: form.clientSecret })}
+          className="h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-50"
+          style={{ background: GOLD, color: "#000" }}>
+          {saveMut.isPending ? "Salvataggio..." : "Salva PayPal"}
+        </button>
+      </div>
+    );
+  };
+
+  const BankForm = () => {
+    const s = get("bank_transfer");
+    const [form, setForm] = useState({
+      enabled: s?.enabled ?? false,
+      bankAccountHolder: s?.bankAccountHolder ?? "",
+      bankName: s?.bankName ?? "",
+      bankIban: s?.bankIban ?? "",
+      bankSwift: s?.bankSwift ?? "",
+      bankReference: s?.bankReference ?? "",
+    });
+    return (
+      <div className="space-y-4 max-w-xl">
+        <div className="flex items-center gap-3 mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.enabled} onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))} className="h-4 w-4 accent-amber-500" />
+            <span className="text-sm font-medium">Abilita Bonifico Bancario</span>
+          </label>
+        </div>
+        {[{ label: "Intestatario Conto", key: "bankAccountHolder" as const, placeholder: "The Oxygen Factory S.r.l." },
+          { label: "Banca", key: "bankName" as const, placeholder: "Banca Sella" },
+          { label: "IBAN", key: "bankIban" as const, placeholder: "IT60 X054 2811 1010 0000 0123 456" },
+          { label: "BIC/SWIFT", key: "bankSwift" as const, placeholder: "SELBIT2B" },
+          { label: "Causale predefinita", key: "bankReference" as const, placeholder: "Pagamento fattura #..." }].map(({ label, key, placeholder }) => (
+          <div key={key}>
+            <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+            <input type="text" value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+              placeholder={placeholder}
+              className="w-full h-9 rounded-lg border bg-transparent px-3 text-sm focus:outline-none focus:ring-1"
+              style={{ borderColor: BORDER }} />
+          </div>
+        ))}
+        <button disabled={saveMut.isPending} onClick={() => saveMut.mutate({ provider: "bank_transfer", enabled: form.enabled, bankAccountHolder: form.bankAccountHolder, bankName: form.bankName, bankIban: form.bankIban, bankSwift: form.bankSwift, bankReference: form.bankReference })}
+          className="h-9 px-4 rounded-lg text-sm font-semibold disabled:opacity-50"
+          style={{ background: GOLD, color: "#000" }}>
+          {saveMut.isPending ? "Salvataggio..." : "Salva Bonifico"}
+        </button>
+      </div>
+    );
+  };
+
+  const TABS: { id: "stripe" | "paypal" | "bank_transfer"; label: string; icon: React.ElementType }[] = [
+    { id: "stripe", label: "Stripe", icon: CreditCard },
+    { id: "paypal", label: "PayPal", icon: Wallet },
+    { id: "bank_transfer", label: "Bonifico Bancario", icon: Receipt },
+  ];
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-1">Metodi di Pagamento</h2>
+        <p className="text-sm text-muted-foreground">Configura i gateway di pagamento accettati dalla piattaforma. Le chiavi vengono salvate cifrate nel database.</p>
+      </div>
+      <div className="flex gap-2 mb-6 border-b" style={{ borderColor: BORDER }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px"
+            style={{ borderColor: tab === t.id ? GOLD : "transparent", color: tab === t.id ? GOLD : undefined }}>
+            <t.icon className="h-4 w-4" />{t.label}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-xl border p-6" style={{ borderColor: BORDER, background: CARD_BG }}>
+        {tab === "stripe" && <StripeForm />}
+        {tab === "paypal" && <PayPalForm />}
+        {tab === "bank_transfer" && <BankForm />}
+      </div>
+    </div>
+  );
+}
+
 function renderSection(section: Section) {
   switch (section) {
     case "overview": return <SectionOverview />;
@@ -1175,6 +1315,7 @@ function renderSection(section: Section) {
     case "settings": return <SectionPlaceholder icon={Settings} title="Impostazioni Piattaforma" />;
     case "security": return <SectionSystem />;
     case "email-settings": return <SectionPlaceholder icon={Zap} title="Configurazione Email" />;
+    case "payments": return <SectionPayments />;
     default: return null;
   }
 }

@@ -152,6 +152,10 @@ export default function Footer() {
             <p className="text-xs text-muted-foreground mt-1">
               {t("footer.disclaimer")}
             </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="font-medium" style={{ color: "oklch(68% 0.19 72)" }}>The Oxygen Factory</span>
+              {" "}&mdash; P.IVA: 03853280794
+            </p>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-[oklch(60%_0.18_145)] animate-pulse" />

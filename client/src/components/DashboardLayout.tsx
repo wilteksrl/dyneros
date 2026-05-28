@@ -287,6 +287,11 @@ function DashboardLayoutContent({
                 <p className="text-xs font-mono font-medium px-2" style={{ color: GOLD }}>{customerId}</p>
               </div>
             )}
+            {!isCollapsed && (
+              <p className="text-[10px] text-muted-foreground/40 px-1 pb-1 leading-tight">
+                <span style={{ color: "oklch(68% 0.19 72 / 0.7)" }}>The Oxygen Factory</span> &mdash; P.IVA: 03853280794
+              </p>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-[oklch(15%_0.008_264)] transition-colors w-full text-left focus:outline-none">

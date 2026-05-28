@@ -448,3 +448,21 @@ export const emailLog = mysqlTable("email_log", {
   createdIdx: index("email_log_created_idx").on(t.createdAt),
 }));
 export type EmailLog = typeof emailLog.$inferSelect;
+
+export const paymentSettings = mysqlTable("payment_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: mysqlEnum("provider", ["stripe", "paypal", "bank_transfer"]).notNull().unique(),
+  enabled: boolean("enabled").default(false).notNull(),
+  publicKey: varchar("publicKey", { length: 500 }),
+  secretKey: varchar("secretKey", { length: 500 }),
+  webhookSecret: varchar("webhookSecret", { length: 500 }),
+  clientId: varchar("clientId", { length: 500 }),
+  clientSecret: varchar("clientSecret", { length: 500 }),
+  bankName: varchar("bankName", { length: 200 }),
+  bankIban: varchar("bankIban", { length: 50 }),
+  bankSwift: varchar("bankSwift", { length: 20 }),
+  bankAccountHolder: varchar("bankAccountHolder", { length: 200 }),
+  bankReference: varchar("bankReference", { length: 200 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PaymentSetting = typeof paymentSettings.$inferSelect;

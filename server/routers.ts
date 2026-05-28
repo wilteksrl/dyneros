@@ -9,7 +9,7 @@ import {
   documents, wallets, smartContracts, domains, aiProjects,
   notifications, userSettings, apiKeys, auditLog,
   affiliateProfiles, affiliateConversions, affiliatePayouts,
-  affiliateLeads, affiliateClicks, emailLog
+  affiliateLeads, affiliateClicks, emailLog, paymentSettings
 } from "../drizzle/schema";
 import { COOKIE_NAME } from "@shared/const";
 import {
@@ -1718,6 +1718,66 @@ export const appRouter = router({
       } catch { blockNumber = null; }
       return { blockNumber, walletsCount, contractsCount };
     }),
+
+    getPaymentSettings: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(paymentSettings).orderBy(asc(paymentSettings.provider));
+    }),
+
+    savePaymentSettings: protectedProcedure
+      .input(z.object({
+        provider: z.enum(["stripe", "paypal", "bank_transfer"]),
+        enabled: z.boolean(),
+        publicKey: z.string().optional(),
+        secretKey: z.string().optional(),
+        webhookSecret: z.string().optional(),
+        clientId: z.string().optional(),
+        clientSecret: z.string().optional(),
+        bankName: z.string().optional(),
+        bankIban: z.string().optional(),
+        bankSwift: z.string().optional(),
+        bankAccountHolder: z.string().optional(),
+        bankReference: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "superadmin") throw new Error("Accesso negato");
+        const db = await getDb();
+        if (!db) throw new Error("Database non disponibile");
+        const existing = await db.select({ id: paymentSettings.id }).from(paymentSettings).where(eq(paymentSettings.provider, input.provider)).limit(1);
+        if (existing.length > 0) {
+          await db.update(paymentSettings).set({
+            enabled: input.enabled,
+            publicKey: input.publicKey ?? null,
+            secretKey: input.secretKey ?? null,
+            webhookSecret: input.webhookSecret ?? null,
+            clientId: input.clientId ?? null,
+            clientSecret: input.clientSecret ?? null,
+            bankName: input.bankName ?? null,
+            bankIban: input.bankIban ?? null,
+            bankSwift: input.bankSwift ?? null,
+            bankAccountHolder: input.bankAccountHolder ?? null,
+            bankReference: input.bankReference ?? null,
+          }).where(eq(paymentSettings.provider, input.provider));
+        } else {
+          await db.insert(paymentSettings).values({
+            provider: input.provider,
+            enabled: input.enabled,
+            publicKey: input.publicKey ?? null,
+            secretKey: input.secretKey ?? null,
+            webhookSecret: input.webhookSecret ?? null,
+            clientId: input.clientId ?? null,
+            clientSecret: input.clientSecret ?? null,
+            bankName: input.bankName ?? null,
+            bankIban: input.bankIban ?? null,
+            bankSwift: input.bankSwift ?? null,
+            bankAccountHolder: input.bankAccountHolder ?? null,
+            bankReference: input.bankReference ?? null,
+          });
+        }
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;
